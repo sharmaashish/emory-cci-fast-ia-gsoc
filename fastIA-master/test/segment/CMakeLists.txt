@@ -1,6 +1,14 @@
 enable_testing()
 
-add_executable(sample_test sample_test.cpp)
-target_link_libraries(sample_test cci_common segment boost_unit_test_framework)
+set(EXECUTABLE_OUTPUT_PATH ${EXECUTABLE_OUTPUT_PATH}/test_segment)
 
-add_test(SampleTest ${EXECUTABLE_OUTPUT_PATH}/sample_test.exe)
+set(tests sample_test)
+
+foreach(test ${tests})
+	add_executable(${test}_segment ${test}.cpp)
+
+	target_link_libraries(${test}_segment cci_common segment)
+	target_link_libraries(${test}_segment boost_unit_test_framework)
+
+	add_test(${test}_segment ${EXECUTABLE_OUTPUT_PATH}/${test}_segment.exe)
+endforeach(test)

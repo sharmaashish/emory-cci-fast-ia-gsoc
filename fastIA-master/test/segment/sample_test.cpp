@@ -4,7 +4,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <stdio.h>
-#include "PixelOperations.h"
+//#include "PixelOperations.h"
 #include "UtilsCVImageIO.h"
 #include "ConnComponents.h"
 #if defined (WITH_CUDA)
@@ -13,6 +13,7 @@
 #include "opencv2/gpu/gpu.hpp"
 #include "ccl_uf.cuh"
 #endif
+
 
 BOOST_AUTO_TEST_CASE( test1 )
 {
