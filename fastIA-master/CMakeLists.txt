@@ -5,6 +5,9 @@ PROJECT( fastIA )
 set(fastIA_VERSION_MAJOR 1 CACHE INTERNAL "major version")
 set(fastIA_VERSION_MINOR 0 CACHE INTERNAL "minor version")
 
+set(NS_FEATURES OFF CACHE BOOL "Building Features Extraction")
+set(NS_SEGMENT OFF CACHE BOOL "Building Segmentation")
+
 #message(STATUS "CMAKE binary dir location: ${CMAKE_BINARY_DIR}")
 #message(STATUS "PROJECT binary dir location: ${PROJECT_BINARY_DIR}")
 
@@ -89,4 +92,6 @@ option (BUILD_TEST_APPLICATIONS "Inform whether test applications should be buil
 # Check if the user want to build sample applications
 option (BUILD_EXAMPLE_APPLICATIONS "Inform whether sample applications should be built" ON)
 
+enable_testing()
 add_subdirectory(src)
+add_subdirectory(test)

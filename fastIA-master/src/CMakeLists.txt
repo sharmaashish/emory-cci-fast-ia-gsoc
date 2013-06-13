@@ -1,8 +1,5 @@
 add_subdirectory(common)
 
-set(NS_FEATURES OFF CACHE BOOL "Building Features Extraction")
-set(NS_SEGMENT OFF CACHE BOOL "Building Segmentation")
-
 if(NS_FEATURES OR NS_SEGMENT)
     #### OpenCV
     find_path(OpenCV_CMAKE_DIR NAMES FindOpenCV.cmake OpenCVConfig.cmake
