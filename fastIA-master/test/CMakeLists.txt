@@ -2,6 +2,8 @@ enable_testing()
 
 find_package(Boost COMPONENTS unit_test_framework REQUIRED)
 
+include_directories(.)
+
 if(USE_CUDA)
     include_directories(${CUDA_INCLUDE_DIRS})
 endif(USE_CUDA)
