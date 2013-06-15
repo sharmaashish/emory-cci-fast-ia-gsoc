@@ -122,6 +122,22 @@ option (BUILD_TEST_APPLICATIONS "Inform whether test applications should be buil
 # Check if the user want to build sample applications
 option (BUILD_EXAMPLE_APPLICATIONS "Inform whether sample applications should be built" ON)
 
-enable_testing()
 add_subdirectory(src)
-add_subdirectory(test)
+
+set(BUILD_UNIT_TESTS ON CACHE BOOL "Building unit tests")
+
+if(BUILD_UNIT_TESTS)
+
+    SET(TEST_DATA_PATH "${CMAKE_SOURCE_DIR}/../../test_data" CACHE STRING "Inform where the test data are located")
+
+    if(EXISTS ${TEST_DATA_PATH})
+	message(STATUS "test data path: ${TEST_DATA_PATH}")
+    else()
+	message(WARNING "test data path not found at: ${TEST_DATA_PATH}")
+    endif()
+
+    add_definitions(-DTEST_DATA_PATH="${TEST_DATA_PATH}")
+
+    enable_testing()
+    add_subdirectory(test)
+endif(BUILD_UNIT_TESTS)
