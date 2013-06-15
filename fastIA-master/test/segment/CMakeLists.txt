@@ -1,8 +1,9 @@
 enable_testing()
 
 set(EXECUTABLE_OUTPUT_PATH ${EXECUTABLE_OUTPUT_PATH}/test_segment)
+file(MAKE_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/out)
 
-set(tests sample_test)
+set(tests sample_test bwareopenTest)
 
 foreach(test ${tests})
 	add_executable(${test}_segment ${test}.cpp)

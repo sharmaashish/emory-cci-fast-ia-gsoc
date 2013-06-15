@@ -1,6 +1,7 @@
 enable_testing()
 
 set(EXECUTABLE_OUTPUT_PATH ${EXECUTABLE_OUTPUT_PATH}/test_features)
+file(MAKE_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/out)
 
 set(tests sample_test)
 
