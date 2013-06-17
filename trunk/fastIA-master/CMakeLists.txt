@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 2.8)
 
 PROJECT( fastIA )
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake_modules)
+
+message(STATUS ${CMAKE_MODULE_PATH})
+
+
+
 # The version number
 set(fastIA_VERSION_MAJOR 1 CACHE INTERNAL "major version")
 set(fastIA_VERSION_MINOR 0 CACHE INTERNAL "minor version")
@@ -105,6 +112,11 @@ if(NS_FEATURES OR NS_SEGMENT)
     else(USE_CUDA)
     	set(CUDA_FOUND 0)
     endif(USE_CUDA)
+
+    set(USE_OPENCL OFF CACHE BOOL "Include OpenCL support")
+    if(USE_OPENCL)
+	find_package(OpenCL)
+    endif(USE_OPENCL)
     
 endif(NS_FEATURES OR NS_SEGMENT)
 
