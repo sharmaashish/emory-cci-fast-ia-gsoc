@@ -784,7 +784,7 @@ GpuMat imfillHoles(const GpuMat& image, bool binary, int connectivity, Stream& s
 
 	printf("fillHoles: input.rows:%d\n", image.rows);
 	// copy the input and pad with -inf.
-	GpuMat mask2;
+    GpuMat mask2(image.size().width + 2, image.size().height + 2, image.type());
 	nscale::gpu::PixelOperations::copyMakeBorder(image, mask2, 1, 1, 1, 1, Scalar_<T>(mn), stream);
 	// create marker with inf inside and -inf at border, and take its complement
 	GpuMat marker2(image.size(), image.type());
@@ -792,7 +792,8 @@ GpuMat imfillHoles(const GpuMat& image, bool binary, int connectivity, Stream& s
 	stream.waitForCompletion();
 
 	// them make the border - OpenCV does not replicate the values when one Mat is a region of another.
-	GpuMat marker;
+//	GpuMat marker;
+    GpuMat marker(marker2.size().width + 2, marker2.size().height + 2, marker2.type());
 	nscale::gpu::PixelOperations::copyMakeBorder(marker2, marker, 1, 1, 1, 1, Scalar_<T>(mx), stream);
 	stream.waitForCompletion();
 
