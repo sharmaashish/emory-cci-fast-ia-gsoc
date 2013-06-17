@@ -1,3 +1,8 @@
+#define BOOST_TEST_MAIN
+#define BOOST_TEST_DYN_LINK
+
+#include <boost/test/unit_test.hpp>
+#include "TestUtils.h"
 
 #include "opencv2/opencv.hpp"
 #include <iostream>
@@ -11,37 +16,29 @@
 #include <iostream>
 #include <iomanip>
 
-
 using namespace cv;
 
-
-int main (int argc, char **argv){
-
-	if(argc != 2){
-		std::cout << "./distTransform <maskImage>" << std::endl;
-		exit(1);
-	}
-    Mat input = imread(argv[1], -1);
+BOOST_AUTO_TEST_CASE(dist_transform_test_1)
+{   
+    
+    Mat input = imread(DATA_IN("cell_binary_mask.png"), -1);
 	if(input.data == NULL){
-		printf("Failed reading");
-		exit(1);
+        BOOST_FAIL("Failed reading");
 	}
 //	std::cout << "input - " << (int) input.ptr(10)[20] << std::endl;
 
-       int zoomFactor = 2; 
-
-        if(zoomFactor > 1){
-                Mat tempMask = Mat::zeros((input.cols*zoomFactor) ,(input.rows*zoomFactor), input.type());
-                for(int x = 0; x < zoomFactor; x++){
-                        for(int y = 0; y <zoomFactor; y++){
-                                Mat roiMask(tempMask, cv::Rect((input.cols*x), input.rows*y, input.cols, input.rows ));
-                                input.copyTo(roiMask);
-                        }
-                }
-                input = tempMask;
+    int zoomFactor = 1; 
+    
+    if(zoomFactor > 1){
+        Mat tempMask = Mat::zeros((input.cols*zoomFactor) ,(input.rows*zoomFactor), input.type());
+        for(int x = 0; x < zoomFactor; x++){
+            for(int y = 0; y <zoomFactor; y++){
+                Mat roiMask(tempMask, cv::Rect((input.cols*x), input.rows*y, input.cols, input.rows ));
+                input.copyTo(roiMask);
+            }
         }
-	
-
+        input = tempMask;
+    }
 
 	
 //	gpu::setDevice(2);
@@ -61,8 +58,6 @@ int main (int argc, char **argv){
 //			if(x==6 && y==1){
 //				ptr[y] = 0;
 //			}
-
-
 //			std::cout << (int) ptr[y] <<" ";
 		}
 //		std::cout<<std::endl;
@@ -77,6 +72,9 @@ int main (int argc, char **argv){
 	distanceTransform(input, dist, CV_DIST_L2, CV_DIST_MASK_PRECISE);
 	uint64_t t2 = cci::common::event::timestampInUS();
 	std::cout << "distTransf CPU  took " << t2-t1 <<" ms"<<std::endl;
+    
+    imwrite(DATA_OUT("cell_binary_mask_dst_trans_cpu_out.png"), dist);
+    
 	dist.release();
 
 	t1 = cci::common::event::timestampInUS();
@@ -121,39 +119,12 @@ int main (int argc, char **argv){
 	t1 = cci::common::event::timestampInUS();
 	Mat h_distance(g_distance);
 	t2 = cci::common::event::timestampInUS();
+    
+    imwrite(DATA_OUT("cell_binary_mask_dst_trans_gpu_out.png"), h_distance);
 
 	std::cout << "download:"<< t2-t1 << std::endl;
 #endif
-//	for(int x = 0; x < h_distance.rows; x++){
-//		float* ptr = (float*)h_distance.ptr(x);
-//		for(int y = 0; y < h_distance.cols; y++){
-//			std::cout << std::setprecision(10) << ptr[y] <<"\t ";
-//		}
-//		std::cout<<std::endl;
-//	}
 
-//	Mat diff = (h_distance - dist) > 0.01;
-//	std::cout << "NonZero=" << countNonZero(diff) << std::endl;
-//	Mat diff = (queueBasedDist - dist) > 0.1 ;
-//	std::cout << "NonZeroCPU=" << countNonZero(diff) << std::endl;
-//	diff = (queueBasedTiled - dist) > 0.1;
-//	std::cout << "NonZeroCPUTiled=" << countNonZero(diff) << std::endl;
-
-//	imwrite("diff.jpg", diff);
-
-//	for(int x = 0; x < queueBasedDist.rows; x++){
-//		bool* ptr = diff.ptr<bool>(x);
-//		for(int y = 0; y < queueBasedTiled.cols; y++){
-//			std::cout << std::setprecision(2) << ptr[y] <<"\t ";
-//		}
-//		std::cout<<std::endl;
-//	}
-
-//	h_distance.release();
-//	g_distance.release();
-//	g_mask.release();
-
-
-	return 0;
+//	return 0;
 }
 
