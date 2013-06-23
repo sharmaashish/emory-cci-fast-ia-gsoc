@@ -116,6 +116,18 @@ if(NS_FEATURES OR NS_SEGMENT)
     set(USE_OPENCL OFF CACHE BOOL "Include OpenCL support")
     if(USE_OPENCL)
 	find_package(OpenCL)
+
+        if(OPENCL_FOUND) 		
+            message(STATUS "OpenCL detected")
+
+	    message(STATUS "opencl library: " ${OPENCL_LIBRARY})
+	    message(STATUS "opencl include dir: " ${OPENCL_INCLUDE_DIR})
+
+	    include_directories(BEFORE ${OPENCL_INCLUDE_DIR})
+
+
+	endif(OPENCL_FOUND)
+
     endif(USE_OPENCL)
     
 endif(NS_FEATURES OR NS_SEGMENT)

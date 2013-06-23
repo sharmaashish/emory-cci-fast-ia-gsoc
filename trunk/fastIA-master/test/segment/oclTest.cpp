@@ -1,6 +1,11 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/ocl/ocl.hpp>
 
+#include <opencv2/ocl/private/util.hpp>
+
+//#include <CL/cl.
+#include <CL/cl.hpp>
+
 #include "TestUtils.h"
 
 using namespace cv;

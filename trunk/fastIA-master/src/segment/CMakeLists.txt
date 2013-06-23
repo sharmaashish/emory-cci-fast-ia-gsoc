@@ -26,6 +26,12 @@ else(CUDA_FOUND)
 	add_library("${libname}" SHARED ${libsrcs} ${gpulibsrcs})
 endif(CUDA_FOUND)
 
+
+if(OPENCL_FOUND)
+    add_subdirectory(opencl)
+endif(OPENCL_FOUND)
+
+
 # Link opencv stuff to the execution engine
 target_link_libraries("${libname}" ${OpenCV_LIBS})
 
