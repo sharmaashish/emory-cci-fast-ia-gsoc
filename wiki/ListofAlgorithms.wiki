@@ -11,6 +11,9 @@ This is a list of algorithms that are currently being used in our broader micros
 == Algorithm Source ==
 Algorithms with a clearly defined API.  "m" modified.  "sc" single core.  "mc" multi core. "x" yes.
 
+WORK IN PROGRESS!!!!
+
+
 || algorithm || OpenCV CPU || OpenCV CUDA || External CPU || External CUDA || In House CPU || In House CUDA ||
 || connected components labeling (bwlabel) ||  ||  || m || m || sc ||  ||
 || ccl relable ||  ||  ||  ||  || x || x ||
@@ -46,7 +49,10 @@ Algorithms with a clearly defined API.  "m" modified.  "sc" single core.  "mc" m
 
 
 
-opencv algorithms used
+== opencv algorithms used ==
+
+WORK IN PROGRESS!!!!
+
 
 || algorithm || CPU || GPU ||
 || bitwise_not || x || x ||
