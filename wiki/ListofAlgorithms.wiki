@@ -2,6 +2,7 @@
 #List of algorithms that we use in OpenCV/CUDA/OpenCL.
 
 = Introduction =
+WORK IN PROGRESS!!!!
 
 This is a list of algorithms that are currently being used in our broader microscopy image analysis pipeline.  The list of algorithms are from OpenCV, external source, or in house development.  The type of algorithms include CPU, CUDA, and openCL.  We also outline our current implementation status
 
