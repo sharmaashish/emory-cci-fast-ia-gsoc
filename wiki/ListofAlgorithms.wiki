@@ -10,15 +10,15 @@ This is a list of algorithms that are currently being used in our broader micros
 = Details =
 
 == Algorithm Source ==
-Algorithms with a clearly defined API.
+Algorithms with a clearly defined API.  "m" modified.  "sc" single core.  "mc" multi core. "x" yes.
 
 || algorithm || OpenCV CPU || OpenCV CUDA || External CPU || External CUDA || In House CPU || In House CUDA ||
-|| connected components labeling (bwlabel) ||  ||  || m || m ||  ||  ||
+|| connected components labeling (bwlabel) ||  ||  || m || m || sc ||  ||
 || ccl relable ||  ||  ||  ||  || x || x ||
 || area thresholding ||  ||  ||  ||  || x || x ||
-|| bounding boxes ||  ||  ||  ||  || x || x ||
+|| bounding boxes || x ||  ||  ||  || x || x ||
 || invert ||  ||  ||  ||  || x || x ||
-|| threshold ||  ||  ||  ||  ||  || x ||
+|| threshold || x ||  ||  ||  ||  || x ||
 || replace ||  ||  ||  ||  || x || x ||
 || divide ||  ||  ||  ||  ||  || x ||
 || mask ||  ||  ||  ||  ||  || x ||
@@ -30,29 +30,48 @@ Algorithms with a clearly defined API.
 || watershed || x ||  ||  || x ||  ||  ||
 || color deconv ||  ||  ||  ||  || x || x ||
 || find border ||  ||  ||  ||  || x || x ||
-|| morphological recon ||  ||  || x || x ||  || x ||
+|| morphological recon ||  ||  || x || x || sc/mc || x ||
+|| imfill ||  ||  ||  ||  || x || x ||
+|| imfillHoles ||  ||  ||  ||  || x || x ||
+|| bwselect ||  ||  ||  ||  || x || x ||
+|| bwareaopen ||  ||  ||  ||  || x || x ||
 || imfill ||  ||  ||  ||  ||  || x ||
 || imfillHoles ||  ||  ||  ||  ||  || x ||
 || bwselect ||  ||  ||  ||  ||  || x ||
-|| bwareaopen ||  ||  ||  ||  ||  || x ||
-|| imfill ||  ||  ||  ||  ||  || x ||
-|| imfillHoles ||  ||  ||  ||  ||  || x ||
-|| bwselect ||  ||  ||  ||  ||  || x ||
-|| imhmin ||  ||  ||  ||  ||  || x ||
-|| localmax ||  ||  ||  ||  ||  || x ||
-|| morph open ||  ||  ||  ||  ||  || x ||
+|| imhmin ||  ||  ||  ||  || x || x ||
+|| localmax/localmin ||  ||  ||  ||  || x || x ||
+|| morph open || x ||  ||  ||  || x || x ||
 || morph dilate ||  ||  ||  ||  ||  || x ||
 || morph erode ||  ||  ||  ||  ||  || x ||
-|| distance transform ||  ||  ||  ||  || x || x ||
+|| distance transform || x ||  ||  ||  || x || x ||
 
 
 
 opencv algorithms used
 || algorithm || CPU || GPU ||
-|| bitwise_not || x ||  ||
+|| bitwise_not || x || x ||
+|| bitwise_and ||  || x ||
 || norm || x ||  ||
 || inv || x ||  ||
 || copyMakeBorder || x ||  ||
+|| minMaxLoc || x ||  ||
+|| findContours || x ||  ||
+|| drawContours || x ||  ||
+|| boundingRect || x ||  ||
+|| countNonZero || x ||  ||
+|| contourArea  || x ||  ||
+|| watershed || x ||  ||
+|| floodfill || x ||  ||
+|| erode || x || x ||
+|| dilate || x || x ||
+|| createContinuous ||  || x ||
+|| Stream ||  || x ||
+|| convertTo || x || x ||
+|| split || x ||  ||
+|| -/+/&/==/! || x || x ||
+|| getStructuringElement || x ||  ||
+|| distanceTransform || x ||  ||
+|| threshold || x || x ||
 
 == Algorithm Dependencies ==
 libraries that the algorithm uses.
