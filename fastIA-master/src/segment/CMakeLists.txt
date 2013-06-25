@@ -29,6 +29,8 @@ endif(CUDA_FOUND)
 
 if(OPENCL_FOUND)
     add_subdirectory(opencl)
+    link_directories(${segment_opencl_BINARY_DIR})
+    target_link_libraries(${libname} segment_opencl)
 endif(OPENCL_FOUND)
 
 

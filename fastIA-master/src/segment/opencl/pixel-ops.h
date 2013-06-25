@@ -1,13 +1,18 @@
 #ifndef PIXEL_OPS_H
 #define PIXEL_OPS_H
 
-#include <opencv2/ocl/ocl.hpp>
-#include <opencv2/ocl/private/util.hpp>
+#include <CL/cl.hpp>
 
-using namespace cv;
+void invert(cl::CommandQueue& queue, cl::Kernel& kernel,
+            int width, int height,
+            cl::Buffer& src, int src_pitch,
+            cl::Buffer& dst, int dst_pitch);
 
-void thresholdCaller(int rows, int cols, const ocl::oclMat img1,
- ocl::oclMat result, int lower, bool lower_inclusive, int upper, bool up_inclusive, cudaStream_t stream);
-
+void threshold(cl::CommandQueue& queue, cl::Kernel& kernel,
+            int width, int height,
+            cl::Buffer& src, int src_pitch,
+            cl::Buffer& dst, int dst_pitch,
+            unsigned char lower, unsigned char upper,
+            bool lower_inclusive, bool upper_inclusive);
 
 #endif //PIXEL_OPS_H

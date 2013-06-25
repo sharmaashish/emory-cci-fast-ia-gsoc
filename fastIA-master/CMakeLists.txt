@@ -123,8 +123,14 @@ if(NS_FEATURES OR NS_SEGMENT)
 	    message(STATUS "opencl library: " ${OPENCL_LIBRARY})
 	    message(STATUS "opencl include dir: " ${OPENCL_INCLUDE_DIR})
 
-	    include_directories(BEFORE ${OPENCL_INCLUDE_DIR})
+            add_definitions(-D__CL_ENABLE_EXCEPTIONS)
 
+            # OpenCL C++ bindings
+            include_directories(BEFORE ${PROJECT_SOURCE_DIR}/external)
+
+            # OPENCL_INCLUDE_DIR moved to front of include directories to prevent
+            # using OpenCL headers from default system include dir
+            include_directories(BEFORE ${OPENCL_INCLUDE_DIR})
 
 	endif(OPENCL_FOUND)
 

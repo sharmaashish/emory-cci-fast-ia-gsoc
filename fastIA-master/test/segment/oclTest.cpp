@@ -16,8 +16,10 @@ int main(int argc, char* argv[]){
    
     std::vector<ocl::Info> deviceVector;
     
-    ocl::getDevice(deviceVector);
+    ocl::getDevice(deviceVector, ocl::CVCL_DEVICE_TYPE_ALL);
     
+    std::cout << "device vector size: " << deviceVector.size() << std::endl;
+
     for(int i = 0; i < deviceVector.size(); ++i){
         std::cout << deviceVector[i].DeviceName[0] << std::endl;
     }
