@@ -6,6 +6,7 @@ void oclSimpleInit(cl_device_type type,
                    cl::Context& context, std::vector<cl::Device>& devices)
 {
     std::vector<cl::Platform> platforms;
+    cl_int err = CL_SUCCESS;
 
     cl::Platform::get(&platforms);
 
@@ -13,11 +14,17 @@ void oclSimpleInit(cl_device_type type,
     {
         std::cout << "Platform size 0" << std::endl;
     }
+    else
+    {
+        std::cout << "Platforms size: " << platforms.size() << std::endl;    
+    }
 
     cl_context_properties properties[] =
     {CL_CONTEXT_PLATFORM, (cl_context_properties)(platforms[0])(), 0};
 
-    context = cl::Context(type, properties);
+    context = cl::Context(type, properties, NULL, NULL, &err);
+    
+    //std::cout << (err == CL_SUCCESS ? "true" : "false") << std::endl;
 
     devices = context.getInfo<CL_CONTEXT_DEVICES>();
 

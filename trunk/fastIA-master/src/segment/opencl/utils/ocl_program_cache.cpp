@@ -3,6 +3,10 @@
 extern const char * HelloOpenCL;
 extern const char * Invert;
 extern const char * Threshold;
+extern const char * Bgr2gray;
+extern const char * Mask;
+extern const char * Divide;
+extern const char * Replace;
 
 const char* getSourceByName(const std::string str_name){
 
@@ -12,6 +16,14 @@ const char* getSourceByName(const std::string str_name){
         return Invert;
     else if(str_name == "Threshold")
         return Threshold;
+    else if(str_name == "Bgr2gray")
+        return Bgr2gray;
+    else if(str_name == "Mask")
+        return Mask;
+    else if(str_name == "Divide")
+        return Divide;
+    else if(str_name == "Replace")
+        return Replace;
 
     std::cout << "source for name: " << str_name << " not found!" << std::endl;
 
