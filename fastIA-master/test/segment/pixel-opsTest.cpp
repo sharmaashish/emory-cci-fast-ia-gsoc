@@ -26,8 +26,6 @@
 BOOST_AUTO_TEST_CASE(simple_operations_test)
 {
 
-//    boost::execution_monitor::p_catch_system_errors = false;
-
     std::cout << "invert test hello" << std::endl;
 
     cl_int err = CL_SUCCESS;
@@ -37,7 +35,7 @@ BOOST_AUTO_TEST_CASE(simple_operations_test)
         cl::Context context;
         std::vector<cl::Device> devices;
 
-        oclSimpleInit(CL_DEVICE_TYPE_CPU, context, devices);
+        oclSimpleInit(CL_DEVICE_TYPE_ALL, context, devices);
 
         cl::Device device = devices[0];
 
@@ -47,6 +45,10 @@ BOOST_AUTO_TEST_CASE(simple_operations_test)
 
         cl::Kernel invertKernel = cache.getKernel("Invert", "invert");
         cl::Kernel thresholdKernel = cache.getKernel("Threshold", "threshold");
+        cl::Kernel bgr2grayKernel = cache.getKernel("Bgr2gray", "bgr2gray");
+        cl::Kernel maskKernel = cache.getKernel("Mask", "mask");
+        cl::Kernel divideKernel = cache.getKernel("Divide", "divide");
+        cl::Kernel replaceKernel = cache.getKernel("Replace", "replace");
 
         cl::CommandQueue queue(context, device, 0, &err);
 
