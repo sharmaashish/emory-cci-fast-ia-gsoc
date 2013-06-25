@@ -20,6 +20,15 @@ void oclSimpleInit(cl_device_type type,
     context = cl::Context(type, properties);
 
     devices = context.getInfo<CL_CONTEXT_DEVICES>();
+
+    for(int i = 0; i < devices.size(); ++i){
+
+        cl::Device& device = devices[i];
+
+        std::cout << device.getInfo<CL_DEVICE_NAME>() << std::endl;
+
+    }
+
 }
 
 void oclPrintError(cl::Error &error)
