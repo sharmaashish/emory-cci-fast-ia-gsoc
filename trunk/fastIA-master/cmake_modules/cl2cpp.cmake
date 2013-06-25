@@ -1,3 +1,5 @@
+MESSAGE(STATUS "running cl2cpp")
+
 file(GLOB cl_list "${CL_DIR}/*.cl" )
 
 file(WRITE ${OUTPUT} "// This file is auto-generated. Do not edit!

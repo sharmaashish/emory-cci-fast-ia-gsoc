@@ -11,10 +11,7 @@ set(cci_common_VERSION_MINOR 0)
 #link_directories(${Runtime_BINARY_DIR})
 
 
-set(libsrcs Logger.cpp )    
-
-
-
+set(libsrcs Logger.cpp )
 
 # Source files used by NScale_Common
 set(libname cci_common)
