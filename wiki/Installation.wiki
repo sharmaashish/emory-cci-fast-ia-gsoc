@@ -1,0 +1,16 @@
+#labels Phase-Deploy
+WORK IN PROGRESS
+
+= How to Install =
+
+== Prerequisites ==
+
+# OpenCV 2.4.1 or later
+# CMake 2.8 or later
+# OpenCL runtime?  version 1.1+?
+# CUDA SDK, GPU card, NVidia driver
+
+# Optional: CCMake
+
+== Configure the Source ==
+HOW TO RUN CMake...
