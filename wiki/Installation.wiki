@@ -10,7 +10,8 @@ WORK IN PROGRESS
 # OpenCL runtime. prefer version 1.2 <br />
   * AMD GPU/CPU:  use AMD APP SDK <br />
   * Intel CPU/GPU/Phi:  use Intel SDK for OpenCL <br />
-    if installing on ubuntu, need to follow procedures [http://develnoter.blogspot.com/2012/05/installing-opencl-in-ubuntu-1204.html here]
+    if running on ubuntu, try the following procedures [http://develnoter.blogspot.com/2012/05/installing-opencl-in-ubuntu-1204.html here]
+      or simply install AMD APP SDK which will work with CPUs with SSE 2
   * NVidia:  use CUDA SDK. <br />
   note that compatibilty between these drivers are to be tested.<br />
 
