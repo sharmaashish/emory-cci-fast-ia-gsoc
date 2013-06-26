@@ -5,17 +5,17 @@ WORK IN PROGRESS
 
 == Prerequisites ==
 
-# *OpenCV 2.4.1 or later
-# *CMake 2.8 or later
-# *OpenCL runtime. prefer version 1.2
-  * *AMD GPU/CPU:  use AMD APP SDK
-  * *Intel CPU/GPU/Phi:  use Intel SDK for OpenCL
-  * *NVidia:  use CUDA SDK.
-  note that compatibilty between these drivers are to be tested.
+# OpenCV 2.4.1 or later <br />
+# CMake 2.8 or later <br />
+# OpenCL runtime. prefer version 1.2 <br />
+  * AMD GPU/CPU:  use AMD APP SDK <br />
+  * Intel CPU/GPU/Phi:  use Intel SDK for OpenCL <br />
+  * NVidia:  use CUDA SDK. <br />
+  note that compatibilty between these drivers are to be tested.<br />
 
-# *CUDA SDK (3.0+), GPU card, NVidia driver
+# CUDA SDK (3.0+), GPU card, NVidia driver<br />
 
-# Optional: CCMake
+# Optional: CCMake <br />
 
 == Configure the Source ==
 HOW TO RUN CMake...
