@@ -24,7 +24,7 @@ void watershed(cl::CommandQueue& queue, cl::Kernel& kernel,
     queue.enqueueWriteBuffer(cl_neighbourhood_y, CL_TRUE, 0, sizeof(neighbourhood_y), neighbourhood_y);
 
     const size_t block_size = 6;
-    cl::LocalSpaceArg local_mem = cl::__local(block_size * block_size);
+    cl::LocalSpaceArg local_mem = cl::__local(block_size * block_size * sizeof(float));
 
     //setting args for descent_kernel
     kernel.setArg(0, src);
@@ -42,5 +42,7 @@ void watershed(cl::CommandQueue& queue, cl::Kernel& kernel,
     cl::NDRange global(global_width, global_height);
     cl::NDRange local(block_size, block_size);
 
-    queue.enqueueNDRangeKernel(kernel, NullRange, global, local);
+    cl_int st = queue.enqueueNDRangeKernel(kernel, NullRange, global, local);
+    
+    std::cout << "kernel execution " << st << std::endl;
 }
