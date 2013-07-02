@@ -94,10 +94,10 @@ __kernel void descent_kernel(
     int new_h = h + h / 2;
     int p = INDEX(img_y,img_x,w);
 
-    if(i == 0 && j == 0){
-        printf("size: %d x %d\n", get_local_size(0), get_local_size(1));
-        printf("global size: %d x %d\n", get_global_size(0), get_global_size(1));
-    }
+////    if(i == 0 && j == 0){
+////        printf("size: %d x %d\n", get_local_size(0), get_local_size(1));
+////        printf("global size: %d x %d\n", get_global_size(0), get_global_size(1));
+////    }
 
     // is set when pixel is on the edge of a tile
     int ghost = (tx == 0 || ty == 0 ||
@@ -150,7 +150,7 @@ __kernel void descent_kernel(
         if (exists_q == 0) labeled[p] = PLATEAU;
     }
 }
-
+/*
 
 // Step 2A.
 __kernel void increment_kernel(
@@ -231,3 +231,4 @@ __kernel void minima_kernel(
         }
     }
 }
+*/

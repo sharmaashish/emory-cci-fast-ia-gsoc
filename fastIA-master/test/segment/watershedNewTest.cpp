@@ -51,17 +51,17 @@ BOOST_AUTO_TEST_CASE(simple_operations_test)
 
         img.convertTo(img, CV_8UC1);
 
-        cv::imwrite(DATA_OUT("coins_1b.png"), img);
+        //cv::imwrite(DATA_OUT("coins_1b.png"), img);
 
         cv::Size img_size = img.size();
         int width = img_size.width;
         int height = img_size.height;
         int dst_buff_size = width * height * sizeof(float);
 
-        //cv::Mat labeled = cv::imread(DATA_IN("coins.png"), CV_LOAD_IMAGE_GRAYSCALE);
-        //labeled.convertTo(labeled, CV_32F);
+        cv::Mat labeled = cv::imread(DATA_IN("watershed_test.png"), CV_LOAD_IMAGE_GRAYSCALE);
+        labeled.convertTo(labeled, CV_32F);
 
-        cv::Mat labeled(height, width, CV_32F, .0f);
+       // cv::Mat labeled(height, width, CV_32F, .0f);
 
      //   cv::imwrite(DATA_OUT("coins_4f.png"), labeled);
 
@@ -76,9 +76,15 @@ BOOST_AUTO_TEST_CASE(simple_operations_test)
         cl::Buffer dstBuff = ocvMatToOclBuffer(labeled, queue);
 //        cl::Buffer dstBuff(context, CL_TRUE, dst_buff_size);
 
+        std::cout << "running opencl watershed" << std::endl;
         watershed(queue, watershedKernel, width, height, srcBuff, dstBuff);
 
+        std::cout << "reading output (labels)" << std::endl;
+        
         oclBufferToOcvMat(labeled, dstBuff, dst_buff_size, queue);
+        
+        std::cout << "reading output finished" << std::endl;
+        
 
         float* data = (float*)labeled.data;
 
