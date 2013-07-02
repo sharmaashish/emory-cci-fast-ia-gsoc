@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(simple_operations_test)
         cl::CommandQueue queue(context, device, 0, &err);
 
         cv::Mat img = cv::imread(DATA_IN("coins.png"));
-        cv::Mat img_out(img);
+        cv::Mat labeled(img);
 
         cv::Size img_size = img.size();
 
@@ -67,14 +67,14 @@ BOOST_AUTO_TEST_CASE(simple_operations_test)
 
         invert(queue, invertKernel, img_byte_width, img_size.height, srcBuff, img.step, dstBuff, img.step);
 
-        oclBufferToOcvMat(img_out, dstBuff, img_byte_size, context, queue);
-        cv::imwrite(DATA_OUT("coins_invert.png"), img_out);
+        oclBufferToOcvMat(labeled, dstBuff, img_byte_size, queue);
+        cv::imwrite(DATA_OUT("coins_invert.png"), labeled);
 
         threshold(queue, thresholdKernel, img_byte_width, img_size.height, srcBuff, img.step, dstBuff, img.step,
                   90, 240, true, true);
 
-        oclBufferToOcvMat(img_out, dstBuff, img_byte_size, context, queue);
-        cv::imwrite(DATA_OUT("coins_threshold.png"), img_out);
+        oclBufferToOcvMat(labeled, dstBuff, img_byte_size, queue);
+        cv::imwrite(DATA_OUT("coins_threshold.png"), labeled);
 
     }
     catch (cl::Error err) {

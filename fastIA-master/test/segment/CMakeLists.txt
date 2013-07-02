@@ -4,7 +4,7 @@ set(EXECUTABLE_OUTPUT_PATH ${EXECUTABLE_OUTPUT_PATH}/test_segment)
 file(MAKE_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/out)
 
 set(tests sample_test bwareopenTest deconvTest distTransformTest
-    imfillTest imreconChunkTest watershedTest #oclTest
+    imfillTest imreconChunkTest watershedTest watershedNewTest #oclTest
     pixel-opsTest)
 
 foreach(test ${tests})
