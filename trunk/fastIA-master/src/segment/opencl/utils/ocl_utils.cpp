@@ -43,6 +43,17 @@ void oclPrintError(cl::Error &error)
     std::cerr << "ERROR: " << error.what() << "(" << error.err() << ")" << std::endl;
 }
 
+cl::Buffer ocvMatToOclBuffer(cv::Mat& mat, cl::CommandQueue& queue)
+{
+    cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
+
+    int size_in_bytes = mat.rows * mat.step;
+
+    cl::Buffer buffer(context, CL_TRUE, size_in_bytes);
+    queue.enqueueWriteBuffer(buffer, CL_TRUE, 0, size_in_bytes, mat.data);
+
+    return buffer;
+}
 
 void ocvMatToOclBuffer(cv::Mat& mat, cl::Buffer& buffer, cl::Context& context, cl::CommandQueue& queue)
 {
@@ -52,7 +63,12 @@ void ocvMatToOclBuffer(cv::Mat& mat, cl::Buffer& buffer, cl::Context& context, c
     queue.enqueueWriteBuffer(buffer, CL_TRUE, 0, data_size, mat.data);
 }
 
-void oclBufferToOcvMat(cv::Mat& mat, cl::Buffer& buffer, int size, cl::Context& context, cl::CommandQueue& queue)
+void oclBufferToOcvMat(cv::Mat& mat, cl::Buffer& buffer, int size, cl::CommandQueue& queue)
 {
     queue.enqueueReadBuffer(buffer, CL_TRUE, 0, size, mat.data);
+}
+
+void oclBuferToOcvMat(cv::Mat& mat, cl::Buffer buffer, cl::CommandQueue queue)
+{
+    queue.enqueueReadBuffer(buffer, CL_TRUE, 0, mat.step * mat.size().height, mat.data);
 }

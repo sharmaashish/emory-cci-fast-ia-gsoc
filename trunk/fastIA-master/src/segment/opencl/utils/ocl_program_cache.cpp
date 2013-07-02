@@ -7,6 +7,7 @@ extern const char * Bgr2gray;
 extern const char * Mask;
 extern const char * Divide;
 extern const char * Replace;
+extern const char * Watershed;
 
 const char* getSourceByName(const std::string str_name){
 
@@ -24,6 +25,8 @@ const char* getSourceByName(const std::string str_name){
         return Divide;
     else if(str_name == "Replace")
         return Replace;
+    else if(str_name == "Watershed")
+        return Watershed;
 
     std::cout << "source for name: " << str_name << " not found!" << std::endl;
 
