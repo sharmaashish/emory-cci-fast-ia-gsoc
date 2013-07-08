@@ -32,25 +32,8 @@ BOOST_AUTO_TEST_CASE(simple_operations_test)
 
     try {
 
-        cl::Context context;
-        std::vector<cl::Device> devices;
-
-        oclSimpleInit(CL_DEVICE_TYPE_ALL, context, devices);
-
-        cl::Device device = devices[0];
-
-        std::cout << "devices count: " << devices.size() << std::endl;
-
-        ProgramCache cache(context, device);
-
-        cl::Kernel invertKernel = cache.getKernel("Invert", "invert");
-        cl::Kernel thresholdKernel = cache.getKernel("Threshold", "threshold");
-        cl::Kernel bgr2grayKernel = cache.getKernel("Bgr2gray", "bgr2gray");
-        cl::Kernel maskKernel = cache.getKernel("Mask", "mask");
-        cl::Kernel divideKernel = cache.getKernel("Divide", "divide");
-        cl::Kernel replaceKernel = cache.getKernel("Replace", "replace");
-
-        cl::CommandQueue queue(context, device, 0, &err);
+        cl::CommandQueue queue = ProgramCache::getGlobalInstance().getDefaultCommandQueue();
+        cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
         cv::Mat img = cv::imread(DATA_IN("coins.png"));
         cv::Mat labeled(img);
@@ -65,12 +48,12 @@ BOOST_AUTO_TEST_CASE(simple_operations_test)
 
         ocvMatToOclBuffer(img, srcBuff, context, queue);
 
-        invert(queue, invertKernel, img_byte_width, img_size.height, srcBuff, img.step, dstBuff, img.step);
+        invert(img_byte_width, img_size.height, srcBuff, img.step, dstBuff, img.step);
 
         oclBufferToOcvMat(labeled, dstBuff, img_byte_size, queue);
         cv::imwrite(DATA_OUT("coins_invert.png"), labeled);
 
-        threshold(queue, thresholdKernel, img_byte_width, img_size.height, srcBuff, img.step, dstBuff, img.step,
+        threshold(img_byte_width, img_size.height, srcBuff, img.step, dstBuff, img.step,
                   90, 240, true, true);
 
         oclBufferToOcvMat(labeled, dstBuff, img_byte_size, queue);

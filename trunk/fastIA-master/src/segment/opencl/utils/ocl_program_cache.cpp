@@ -1,5 +1,7 @@
 #include "ocl_program_cache.h"
 
+#include "ocl_utils.h"
+
 extern const char * HelloOpenCL;
 extern const char * Invert;
 extern const char * Threshold;
@@ -35,7 +37,7 @@ const char* getSourceByName(const std::string str_name){
 }
 
 ProgramCache::ProgramCache(cl::Context& context, cl::Device& device)
-    : context(context) {
+    : context(context), defaultCommandQueue(cl::CommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE)) {
 
     devices.push_back(device);
 }
@@ -48,6 +50,7 @@ cl::Program& ProgramCache::getProgram(const std::string name){
         const char* source_str = getSourceByName(name);
         cl::Program::Sources source(1, std::make_pair(source_str, strlen(source_str)));
         programs[name] = cl::Program(context, source);
+
 
         std::cout << "building program: " << name << "... ";
 
@@ -66,8 +69,45 @@ cl::Program& ProgramCache::getProgram(const std::string name){
     return programs[name];
 }
 
+cl::Context ProgramCache::getContext()
+{
+    return context;
+}
+
+cl::Device ProgramCache::getDevice()
+{
+    return devices.front();
+}
+
+cl::CommandQueue ProgramCache::getDefaultCommandQueue()
+{
+    return defaultCommandQueue;
+}
+
 cl::Kernel ProgramCache::getKernel(const std::string programName, const std::string kernelName)
 {
     cl::Program& program = getProgram(programName);
     return cl::Kernel(program, kernelName.c_str());
+}
+
+
+ProgramCache& ProgramCache::getGlobalInstance()
+{
+    static ProgramCache globalCache = globalCacheInitialization();
+    return globalCache;
+}
+
+ProgramCache ProgramCache::globalCacheInitialization()
+{
+    std::cout << "initializing global opencl program cache" << std::endl;
+
+    cl::Context context;
+    std::vector<cl::Device> devices;
+
+    oclSimpleInit(CL_DEVICE_TYPE_ALL, context, devices);
+
+    cl::Device device = devices[0];
+    std::cout << "devices count: " << devices.size() << std::endl;
+
+    return ProgramCache(context, device);
 }
