@@ -1,15 +1,3 @@
-//template <typename T>
-//__global__ void invertKernelFloat(int rows, int cols, const PtrStep_<T> img1, PtrStep_<T> result)
-//{
-//    int x = blockIdx.x * blockDim.x + threadIdx.x;
-//    int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-//    if (y < rows && x < cols)
-//    {
-//        result.ptr(y)[x] = - img1.ptr(y)[x];
-//    }
-//}
-
 __kernel void invert(__global uchar *src, int src_pitch,
                      __global uchar *dst, int dst_pitch,
                      int width, int height)

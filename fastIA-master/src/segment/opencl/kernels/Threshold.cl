@@ -1,18 +1,3 @@
-//template <typename T>
-//__global__ void thresholdKernel(int rows, int cols, const PtrStep_<T> img1, PtrStep_<unsigned char> result, T lower, bool lower_inclusive, T upper, bool up_inclusive)
-//{
-//    int x = blockIdx.x * blockDim.x + threadIdx.x;
-//    int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-//    if (y < rows && x < cols)
-//    {
-//    	T p = img1.ptr(y)[x];
-//    	bool pb = (p > lower) && (p < upper);
-//    	if (lower_inclusive) pb = pb || (p == lower);
-//    	if (up_inclusive) pb = pb || (p == upper);
-//    	result.ptr(y)[x] = pb ? 255 : 0;
-//    }
-//}
 
 __kernel void threshold(__global uchar *src, int src_pitch,
                      __global uchar *dst, int dst_pitch,

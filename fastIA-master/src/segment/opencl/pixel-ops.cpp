@@ -3,11 +3,14 @@
 
 #include <iostream>
 
-void invert(cl::CommandQueue& queue, cl::Kernel& kernel,
-            int width, int height,
+void invert(int width, int height,
             cl::Buffer& src, int src_pitch,
-            cl::Buffer& dst, int dst_pitch)
+            cl::Buffer& dst, int dst_pitch,
+            ProgramCache& cache,
+            cl::CommandQueue queue)
 {
+
+    cl::Kernel kernel = cache.getKernel("Invert", "invert");
 
     kernel.setArg(0, src);
     kernel.setArg(1, src_pitch);
@@ -24,13 +27,16 @@ void invert(cl::CommandQueue& queue, cl::Kernel& kernel,
 }
 
 
-void threshold(cl::CommandQueue& queue, cl::Kernel& kernel,
-            int width, int height,
-            cl::Buffer& src, int src_pitch,
-            cl::Buffer& dst, int dst_pitch,
-            unsigned char lower, unsigned char upper,
-            bool lower_inclusive, bool upper_inclusive)
+void threshold(int width, int height,
+               cl::Buffer& src, int src_pitch,
+               cl::Buffer& dst, int dst_pitch,
+               unsigned char lower, unsigned char upper,
+               bool lower_inclusive, bool upper_inclusive,
+               ProgramCache& cache,
+               cl::CommandQueue queue)
 {
+
+    cl::Kernel kernel = cache.getKernel("Threshold", "threshold");
 
     kernel.setArg(0, src);
     kernel.setArg(1, src_pitch);

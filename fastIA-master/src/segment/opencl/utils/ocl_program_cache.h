@@ -10,14 +10,24 @@
 class ProgramCache
 {
 public:
-    ProgramCache(cl::Context& context, cl::Device& devices);
+    ProgramCache(cl::Context& context, cl::Device& device);
     cl::Program& getProgram(const std::string programName);
     cl::Kernel getKernel(const std::string programName, const std::string kernelName);
 
+    cl::Context getContext();
+    cl::Device getDevice();
+    cl::CommandQueue getDefaultCommandQueue();
+
+    static ProgramCache& getGlobalInstance();
+
 private:
     std::map<std::string, cl::Program> programs;
-    cl::Context& context;
+    cl::Context context;
+    cl::CommandQueue defaultCommandQueue;
+
     std::vector<cl::Device> devices;
+
+    static ProgramCache globalCacheInitialization();
 };
 
 #endif // OCL_PROGRAM_CACHE_H

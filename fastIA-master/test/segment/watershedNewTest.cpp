@@ -32,20 +32,16 @@ BOOST_AUTO_TEST_CASE(simple_operations_test)
 
     try {
 
-        cl::Context context;
-        std::vector<cl::Device> devices;
+//        cl::Context context;
+//        std::vector<cl::Device> devices;
+//        oclSimpleInit(CL_DEVICE_TYPE_ALL, context, devices);
+//        cl::Device device = devices[0];
+//        std::cout << "devices count: " << devices.size() << std::endl;
+//        ProgramCache cache(context, device);
+//        cl::Kernel watershedKernel = cache.getKernel("Watershed", "descent_kernel");
+//        cl::CommandQueue queue(context, device, 0, &err);
 
-        oclSimpleInit(CL_DEVICE_TYPE_ALL, context, devices);
-
-        cl::Device device = devices[0];
-
-        std::cout << "devices count: " << devices.size() << std::endl;
-
-        ProgramCache cache(context, device);
-
-        cl::Kernel watershedKernel = cache.getKernel("Watershed", "descent_kernel");
-
-        cl::CommandQueue queue(context, device, 0, &err);
+        cl::CommandQueue queue = ProgramCache::getGlobalInstance().getDefaultCommandQueue();
 
         cv::Mat img = cv::imread(DATA_IN("watershed_test.png"), CV_LOAD_IMAGE_GRAYSCALE);
 
@@ -77,7 +73,10 @@ BOOST_AUTO_TEST_CASE(simple_operations_test)
 //        cl::Buffer dstBuff(context, CL_TRUE, dst_buff_size);
 
         std::cout << "running opencl watershed" << std::endl;
-        watershed(queue, watershedKernel, width, height, srcBuff, dstBuff);
+        //watershed(queue, watershedKernel, width, height, srcBuff, dstBuff);
+
+        watershed(width, height, srcBuff, dstBuff);
+        watershed(width, height, srcBuff, dstBuff);
 
         std::cout << "reading output (labels)" << std::endl;
         
@@ -108,7 +107,7 @@ BOOST_AUTO_TEST_CASE(simple_operations_test)
 
         for(int i = 0; i < height; ++i){
             for(int j = 0; j < width; ++j){
-                float val = 255 - (data[i * width + j] - min) / (max - min) * 255;
+                float val = (data[i * width + j] - min) / (max - min) * 255;
 
                 outputData[i * width + j] = val;
             }
