@@ -43,30 +43,32 @@ ProgramCache::ProgramCache(cl::Context& context, cl::Device& device)
 }
 
 
-cl::Program& ProgramCache::getProgram(const std::string name){
-    std::map<std::string, cl::Program>::iterator it = programs.find(name);
+cl::Program& ProgramCache::getProgram(const std::string& name, const std::string& params){
+
+    std::string key = name + params;
+
+    std::map<std::string, cl::Program>::iterator it = programs.find(key);
 
     if(it == programs.end()){
         const char* source_str = getSourceByName(name);
         cl::Program::Sources source(1, std::make_pair(source_str, strlen(source_str)));
-        programs[name] = cl::Program(context, source);
-
+        programs[key] = cl::Program(context, source);
 
         std::cout << "building program: " << name << "... ";
 
         try{
-            programs[name].build(devices);
+            programs[key].build(devices, params.c_str());
         }catch(cl::Error ex)
         {
             std::cout << std::endl;
-            std::cout << programs[name].getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]);
+            std::cout << programs[key].getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]);
             throw ex;
         }
 
         std::cout << "OK" << std::endl;
     }
 
-    return programs[name];
+    return programs[key];
 }
 
 cl::Context ProgramCache::getContext()
