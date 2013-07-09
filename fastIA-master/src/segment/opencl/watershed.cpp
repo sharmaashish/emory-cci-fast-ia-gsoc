@@ -19,11 +19,13 @@ void watershed(int width, int height,
 {
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
-    cl::Kernel descent_kernel = cache.getKernel("Watershed", "descent_kernel");
-    cl::Kernel increment_kernel = cache.getKernel("Watershed", "increment_kernel");
-    cl::Kernel minima_kernel = cache.getKernel("Watershed", "minima_kernel");
-    cl::Kernel plateau_kernel = cache.getKernel("Watershed", "plateau_kernel");
-    cl::Kernel flood_kernel = cache.getKernel("Watershed", "flood_kernel");
+    cl::Program& program = cache.getProgram("Watershed");
+    
+    cl::Kernel descent_kernel(program, "descent_kernel");
+    cl::Kernel increment_kernel(program, "increment_kernel");
+    cl::Kernel minima_kernel(program, "minima_kernel");
+    cl::Kernel plateau_kernel(program, "plateau_kernel");
+    cl::Kernel flood_kernel(program, "flood_kernel");
 
     //setting constant memory with neigbourhood
     cl::Buffer cl_neighbourhood_x = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(neighbourhood_x));

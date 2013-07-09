@@ -10,7 +10,8 @@ void invert(int width, int height,
             cl::CommandQueue queue)
 {
 
-    cl::Kernel kernel = cache.getKernel("Invert", "invert");
+    cl::Program& program = cache.getProgram("Invert");
+    cl::Kernel kernel(program, "invert");
 
     kernel.setArg(0, src);
     kernel.setArg(1, src_pitch);
@@ -36,7 +37,8 @@ void threshold(int width, int height,
                cl::CommandQueue queue)
 {
 
-    cl::Kernel kernel = cache.getKernel("Threshold", "threshold");
+    cl::Program& program = cache.getProgram("Threshold");
+    cl::Kernel kernel(program, "threshold");
 
     kernel.setArg(0, src);
     kernel.setArg(1, src_pitch);
