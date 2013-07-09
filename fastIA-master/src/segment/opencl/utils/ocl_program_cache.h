@@ -11,7 +11,7 @@ class ProgramCache
 {
 public:
     ProgramCache(cl::Context& context, cl::Device& device);
-    cl::Program& getProgram(const std::string programName);
+    cl::Program& getProgram(const std::string& name, const std::string& params = "");
     cl::Kernel getKernel(const std::string programName, const std::string kernelName);
 
     cl::Context getContext();
