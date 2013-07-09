@@ -102,19 +102,56 @@ BOOST_AUTO_TEST_CASE(simple_operations_test)
         }
 
         cv::Mat grayOutput(height, width, CV_8UC1);
-
-        unsigned char* outputData = (unsigned char *)grayOutput.data;
+        cv::Mat edgesOutput(height, width, CV_8UC1, cv::Scalar(0));
 
         for(int i = 0; i < height; ++i){
             for(int j = 0; j < width; ++j){
                 float val = (data[i * width + j] - min) / (max - min) * 255;
 
-                outputData[i * width + j] = val;
+                grayOutput.data[i * width + j] = val;
             }
         }
-
-
+        
         cv::imwrite(DATA_OUT("wateshed_test_out.png"), grayOutput);
+        
+        
+        cv::Mat combinedOutput(img);
+        combinedOutput.convertTo(combinedOutput, CV_8UC1);
+
+        const char neighbourhood_x[] = {-1, 0, 1, 1, 1, 0,-1,-1};
+        const char neighbourhood_y[] = {-1,-1,-1, 0, 1, 1, 1, 0};
+        
+        for(int i = 0; i < height; ++i){
+            for(int j = 0; j < width; ++j){
+                
+                int central_idx = i * width + j;
+                
+                unsigned char central_val = grayOutput.data[central_idx];
+                
+                for(int k = 0; k < 8; ++k){
+                    int x_offset = neighbourhood_x[k];
+                    int y_offset = neighbourhood_y[k];
+                    
+                    int x = j + x_offset;
+                    int y = i + y_offset;
+                    
+                    if(x < 0 || x >= width || y < 0 || y >= height)
+                        continue;
+                    
+                    unsigned char neighbour_val = grayOutput.data[y*width + x];
+                    
+                    if(neighbour_val < central_val)
+                    {
+                        edgesOutput.data[central_idx] = 255;
+                        combinedOutput.data[central_idx] = 255;
+                    }
+                }               
+            }
+        }
+        
+        cv::imwrite(DATA_OUT("wateshed_test_out_edges.png"), edgesOutput);
+        cv::imwrite(DATA_OUT("wateshed_test_out_combined.png"), combinedOutput);
+        
     }
     catch (cl::Error err) {
         oclPrintError(err);

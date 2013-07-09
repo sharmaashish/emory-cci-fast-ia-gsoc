@@ -86,13 +86,6 @@ cl::CommandQueue ProgramCache::getDefaultCommandQueue()
     return defaultCommandQueue;
 }
 
-cl::Kernel ProgramCache::getKernel(const std::string programName, const std::string kernelName)
-{
-    cl::Program& program = getProgram(programName);
-    return cl::Kernel(program, kernelName.c_str());
-}
-
-
 ProgramCache& ProgramCache::getGlobalInstance()
 {
     static ProgramCache globalCache = globalCacheInitialization();
