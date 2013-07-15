@@ -13,7 +13,8 @@
 
 #include "opencv2/ocl/ocl.hpp"
 
-
+//#define INPUT_FILE "watershed_test.png"
+#define INPUT_FILE "microscopy/in-imrecon-gray-mask_blurred.png"
 /*
  * runtime parameter --catch_system_errors=no  is needed if there is no gpu
  * (opencl internally invokes subprocess that return non-zero value)
@@ -32,18 +33,10 @@ BOOST_AUTO_TEST_CASE(simple_operations_test)
 
     try {
 
-//        cl::Context context;
-//        std::vector<cl::Device> devices;
-//        oclSimpleInit(CL_DEVICE_TYPE_ALL, context, devices);
-//        cl::Device device = devices[0];
-//        std::cout << "devices count: " << devices.size() << std::endl;
-//        ProgramCache cache(context, device);
-//        cl::Kernel watershedKernel = cache.getKernel("Watershed", "descent_kernel");
-//        cl::CommandQueue queue(context, device, 0, &err);
 
         cl::CommandQueue queue = ProgramCache::getGlobalInstance().getDefaultCommandQueue();
 
-        cv::Mat img = cv::imread(DATA_IN("watershed_test.png"), CV_LOAD_IMAGE_GRAYSCALE);
+        cv::Mat img = cv::imread(DATA_IN(INPUT_FILE), CV_LOAD_IMAGE_GRAYSCALE);
 
         img.convertTo(img, CV_8UC1);
 
@@ -54,7 +47,7 @@ BOOST_AUTO_TEST_CASE(simple_operations_test)
         int height = img_size.height;
         int dst_buff_size = width * height * sizeof(float);
 
-        cv::Mat labeled = cv::imread(DATA_IN("watershed_test.png"), CV_LOAD_IMAGE_GRAYSCALE);
+        cv::Mat labeled = cv::imread(DATA_IN(INPUT_FILE), CV_LOAD_IMAGE_GRAYSCALE);
         labeled.convertTo(labeled, CV_32F);
 
        // cv::Mat labeled(height, width, CV_32F, .0f);
@@ -76,7 +69,18 @@ BOOST_AUTO_TEST_CASE(simple_operations_test)
         //watershed(queue, watershedKernel, width, height, srcBuff, dstBuff);
 
         watershed(width, height, srcBuff, dstBuff);
+
+        float total_time = getLastExecutionTime();
+
+        std::cout << "Execution time in milliseconds = " << std::fixed << std::setprecision(3)
+                  << total_time << " ms" << std::endl;
+
         watershed(width, height, srcBuff, dstBuff);
+
+        total_time = getLastExecutionTime();
+
+        std::cout << "Execution time in milliseconds = " << std::fixed << std::setprecision(3)
+                  << total_time << " ms" << std::endl;
 
         std::cout << "reading output (labels)" << std::endl;
         

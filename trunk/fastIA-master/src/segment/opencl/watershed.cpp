@@ -3,12 +3,8 @@
 
 #include <iostream>
 
-//__constant__ int N_xs[8] = {-1,0,1,1,1,0,-1,-1};
-//__constant__ int N_ys[8] = {-1,-1,-1,0,1,1,1,0};
-
 static const char neighbourhood_x[] = {-1, 0, 1, 1, 1, 0,-1,-1};
 static const char neighbourhood_y[] = {-1,-1,-1, 0, 1, 1, 1, 0};
-
 
 void watershed(int width, int height,
                cl::Buffer& src,
@@ -31,8 +27,14 @@ void watershed(int width, int height,
     cl::Buffer cl_neighbourhood_x = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(neighbourhood_x));
     cl::Buffer cl_neighbourhood_y = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(neighbourhood_y));
 
+#ifdef OPENCL_PROFILE
     cl::Event first_event;
-    queue.enqueueWriteBuffer(cl_neighbourhood_x, CL_TRUE, 0, sizeof(neighbourhood_x), neighbourhood_x, __null, &first_event);
+    queue.enqueueWriteBuffer(cl_neighbourhood_x, CL_TRUE, 0, sizeof(neighbourhood_x),
+                             neighbourhood_x, __null, &first_event);
+#else
+    queue.enqueueWriteBuffer(cl_neighbourhood_x, CL_TRUE, 0, sizeof(neighbourhood_x), neighbourhood_x);
+#endif
+
     queue.enqueueWriteBuffer(cl_neighbourhood_y, CL_TRUE, 0, sizeof(neighbourhood_y), neighbourhood_y);
 
     const size_t block_size = 6;
@@ -148,22 +150,30 @@ void watershed(int width, int height,
     int new_block_size = 16;
     local = cl::NDRange(new_block_size, new_block_size);
 
+#ifdef OPENCL_PROFILE
     cl::Event last_event;
+#endif
 
     while(old_val != new_val)
     {
         old_val = new_val;
         status = queue.enqueueNDRangeKernel(flood_kernel, NullRange, global, local);
+#ifdef OPENCL_PROFILE
         queue.enqueueReadBuffer(counter, CL_TRUE, 0, sizeof(int), &new_val, __null, &last_event);
-        std::cout << "\tnew_val: " << new_val << std::endl;
+#else
+        queue.enqueueReadBuffer(counter, CL_TRUE, 0, sizeof(int), &new_val);
+#endif
+ //       std::cout << "\tnew_val: " << new_val << std::endl;
         c++;
     }
 
-
+#ifdef OPENCL_PROFILE
     last_event.wait();
 
     cl_ulong start = first_event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
     cl_ulong end = last_event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
     cl_ulong total_time = end - start;
-    std::cout << "Execution time in milliseconds = " << std::fixed << std::setprecision(3) << (total_time / 1000000.0) << " ms" << std::endl;
+
+    setLastExecutionTime(total_time/1000000.0f);
+#endif
 }
