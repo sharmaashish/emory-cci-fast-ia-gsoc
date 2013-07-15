@@ -37,7 +37,13 @@ const char* getSourceByName(const std::string str_name){
 }
 
 ProgramCache::ProgramCache(cl::Context& context, cl::Device& device)
-    : context(context), defaultCommandQueue(cl::CommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE)) {
+#ifdef OPENCL_PROFILE
+    : context(context), defaultCommandQueue(cl::CommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE))
+#else
+    : context(context), defaultCommandQueue(cl::CommandQueue(context, device))
+#endif
+{
+
 
     devices.push_back(device);
 }

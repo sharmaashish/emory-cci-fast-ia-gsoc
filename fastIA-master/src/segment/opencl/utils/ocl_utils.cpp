@@ -72,3 +72,26 @@ void oclBuferToOcvMat(cv::Mat& mat, cl::Buffer buffer, cl::CommandQueue queue)
 {
     queue.enqueueReadBuffer(buffer, CL_TRUE, 0, mat.step * mat.size().height, mat.data);
 }
+
+
+#ifdef OPENCL_PROFILE
+
+static float executionTime;
+
+float getLastExecutionTime()
+{
+    return executionTime;
+}
+
+void setLastExecutionTime(float time)
+{
+    executionTime = time;
+}
+
+bool checkProfilingSupport(cl::CommandQueue& queue)
+{
+    cl_command_queue_properties queue_properties = queue.getInfo<CL_QUEUE_PROPERTIES>();
+    return (queue_properties & CL_QUEUE_PROFILING_ENABLE) != 0;
+}
+
+#endif

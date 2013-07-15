@@ -17,4 +17,13 @@ void ocvMatToOclBuffer(cv::Mat& mat, cl::Buffer& buffer,
 void oclBufferToOcvMat(cv::Mat& mat, cl::Buffer& buffer, int size, cl::CommandQueue& queue);
 void oclBuferToOcvMat(cv::Mat& mat, cl::Buffer buffer, cl::CommandQueue queue);
 
+#ifdef OPENCL_PROFILE
+
+float getLastExecutionTime();
+void setLastExecutionTime(float time);
+
+bool checkProfilingSupport(cl::CommandQueue& queue);
+
+#endif
+
 #endif // OCL_UTILS_H
