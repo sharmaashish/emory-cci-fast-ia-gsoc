@@ -133,6 +133,8 @@ void watershed(int width, int height,
         c++;
     }
 
+    std::cout << "step 3: " << c << " iterations" << std::endl;
+
     //preparing flood kernel
 
     queue.enqueueWriteBuffer(counter, CL_TRUE, 0, sizeof(int), &counter_tmp);
@@ -149,6 +151,14 @@ void watershed(int width, int height,
 
     int new_block_size = 16;
     local = cl::NDRange(new_block_size, new_block_size);
+
+    int n_width = ((width - 1) / new_block_size + 1) * new_block_size;
+    int n_height = ((height - 1) / new_block_size + 1) * new_block_size;
+
+    global = cl::NDRange(n_width, n_height);
+
+    std::cout << "local: " << local[0] << ", " << local[1] << std::endl;
+    std::cout << "global: " << global[0] << ", " << global[1] << std::endl;
 
 #ifdef OPENCL_PROFILE
     cl::Event last_event;

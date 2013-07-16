@@ -17,6 +17,7 @@ void oclSimpleInit(cl_device_type type,
     else
     {
         std::cout << "Platforms size: " << platforms.size() << std::endl;    
+        std::cout << "Platform name: " << platforms[0].getInfo<CL_PLATFORM_NAME>() << std::endl;
     }
 
     cl_context_properties properties[] =

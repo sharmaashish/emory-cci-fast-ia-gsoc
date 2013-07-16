@@ -14,7 +14,7 @@
 #include "opencv2/ocl/ocl.hpp"
 
 //#define INPUT_FILE "watershed_test.png"
-#define INPUT_FILE "microscopy/in-imrecon-gray-mask_blurred.png"
+#define INPUT_FILE "tissue_gray_blurred.png"
 /*
  * runtime parameter --catch_system_errors=no  is needed if there is no gpu
  * (opencl internally invokes subprocess that return non-zero value)
