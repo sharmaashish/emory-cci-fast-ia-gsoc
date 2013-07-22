@@ -13,7 +13,7 @@ void watershed(int width, int height,
                cl::Buffer& src,
                cl::Buffer& labeled,
                ProgramCache& cache = ProgramCache::getGlobalInstance(),
-               cl::CommandQueue queue = ProgramCache::getGlobalInstance().getDefaultCommandQueue());
+               cl::CommandQueue& queue = ProgramCache::getGlobalInstance().getDefaultCommandQueue());
 
 
 #endif // WATERSHED_H

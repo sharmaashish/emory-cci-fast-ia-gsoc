@@ -62,9 +62,11 @@ cl::Program& ProgramCache::getProgram(const std::string& name, const std::string
 
         std::cout << "building program: " << name << "... ";
 
-        try{
+        try
+        {
             programs[key].build(devices, params.c_str());
-        }catch(cl::Error ex)
+        }
+        catch(cl::Error ex)
         {
             std::cout << std::endl;
             std::cout << programs[key].getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]);
@@ -77,17 +79,17 @@ cl::Program& ProgramCache::getProgram(const std::string& name, const std::string
     return programs[key];
 }
 
-cl::Context ProgramCache::getContext()
+cl::Context& ProgramCache::getContext()
 {
     return context;
 }
 
-cl::Device ProgramCache::getDevice()
+cl::Device& ProgramCache::getDevice()
 {
     return devices.front();
 }
 
-cl::CommandQueue ProgramCache::getDefaultCommandQueue()
+cl::CommandQueue& ProgramCache::getDefaultCommandQueue()
 {
     return defaultCommandQueue;
 }
