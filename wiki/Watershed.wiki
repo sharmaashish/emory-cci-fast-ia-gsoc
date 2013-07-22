@@ -1,0 +1,70 @@
+#summary Watershed algorithm summary.
+
+= Introduction =
+
+Watershed algorithm summary.
+
+OpenCL implementation based on:
+[https://github.com/louismullie/watershed-cuda]
+
+
+= Impelmentation =
+
+Watershed algorithm can be found in /segment/opencl.
+
+Opencl kernels are located at /segment/opencl/kernels/watershed.cl
+
+
+{{{
+
+void watershed(int width, int height,
+               cl::Buffer& src,
+               cl::Buffer& labeled,
+               ProgramCache& cache = ProgramCache::getGlobalInstance(),
+               cl::CommandQueue queue = ProgramCache::getGlobalInstance().getDefaultCommandQueue());
+
+}}}
+
+= Example =
+
+As an example, we have a picture from the tomography.
+Original image was preprocessed with gaussian blur.
+
+Input to the algorithm is as follows:
+
+http://emory-cci-fast-ia-gsoc.googlecode.com/svn/test_data/watershed/other/watershed_test.png
+
+The raw watershed output is not clearly readable due to small differences in color.
+
+http://emory-cci-fast-ia-gsoc.googlecode.com/svn/test_data/watershed/other/out/watershed_test_out.png
+
+Better method to show result is to draw edges between adjacent basins:
+
+http://emory-cci-fast-ia-gsoc.googlecode.com/svn/test_data/watershed/other/out/watershed_test_out_edges.png
+
+Edges combined with original input data:
+
+http://emory-cci-fast-ia-gsoc.googlecode.com/svn/test_data/watershed/other/out/watershed_test_out_combined.png
+
+= Performance test =
+
+The testing dataset contains images of different sizes. Additionally, for each size there are three variants of image filling (20%, 50% and 100%).
+Original microscopy data were preprocess with gaussian blur with radius=5.
+
+
+|| || 128 (20%) || 128 (50%) || 128 (100%) || 256 (20%) || 256 (50%) || 256 (100%) || 512 (20%) || 512 (50%) || 512 (100%) || 1024 (20%) || 1024 (50%) || 1024 (100%) || 2048 (20%) || 2048 (50%) || 2048 (90%) || 4096 (50%) ||
+|| *Intel Core 2 Duo 2.5GHz* || 98 || 54 || 20 || 505 || 351 || 51 || 3520 || 1912 || 137 || 32379 || 20577 || 608 || 228960 || 157905 || 64873 || 1341238 ||
+|| *GeForce GT 430* || 26 || 18 || 6 || 111 || 77 || 11 || 849 || 483 || 34 || 7997 || 5077 || 129 || 70199 || 49283 || 14049 || 474620 ||
+|| *Tesla C2070* || 18|| 12 || 4 || 41 || 29 || 7 || 231 || 123 || 13 || 1607 || 1037 || 39 || 13035 || 9230 || 2705 || 85839 ||
+
+Sample test data (256 - 20%, 256 - 50%, 256 - 100%):
+
+http://emory-cci-fast-ia-gsoc.googlecode.com/svn/test_data/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_256-fill_25.png http://emory-cci-fast-ia-gsoc.googlecode.com/svn/test_data/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_256-fill_50.png http://emory-cci-fast-ia-gsoc.googlecode.com/svn/test_data/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_256-fill_100.png
+
+= Difficulties =
+
+To Do
+
+= Reference =
+
+[http://www.fem.unicamp.br/~labaki/Academic/cilamce2009/1820-1136-1-RV.pdf 1] Vitor B, Körbes A. Fast image segmentation by watershed transform on graphical hardware. In: Proceedings of the 17th International Conference on Systems, Signals and Image Processing, pp. 376-379, Rio de Janeiro, Brazil.
