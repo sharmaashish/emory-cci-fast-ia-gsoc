@@ -160,7 +160,11 @@ BOOST_AUTO_TEST_CASE(imrecon_chunk_test_1)
 {
     for (int w = 128; w < 4096; w = w* 2) {
 		for (int b2 = 1; b2 <= 512 && b2 <= (w/2); b2 = b2 * 2) {
-			runTest(DATA_IN("microscopy/in-imrecon-gray-marker.png"), DATA_IN("microscopy/in-imrecon-gray-mask.png"), false, w, b2/2);
+
+            const std::string in1 = DATA_IN("microscopy/in-imrecon-gray-marker.png");
+            const std::string in2 = DATA_IN("microscopy/in-imrecon-gray-mask.png");
+
+            runTest(in1.c_str(), in2.c_str(), false, w, b2/2);
 		}
 	}
 }

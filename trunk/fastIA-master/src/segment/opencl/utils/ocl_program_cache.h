@@ -13,9 +13,9 @@ public:
     ProgramCache(cl::Context& context, cl::Device& device);
     cl::Program& getProgram(const std::string& name, const std::string& params = "");
 
-    cl::Context getContext();
-    cl::Device getDevice();
-    cl::CommandQueue getDefaultCommandQueue();
+    cl::Context& getContext();
+    cl::Device& getDevice();
+    cl::CommandQueue& getDefaultCommandQueue();
 
     static ProgramCache& getGlobalInstance();
 

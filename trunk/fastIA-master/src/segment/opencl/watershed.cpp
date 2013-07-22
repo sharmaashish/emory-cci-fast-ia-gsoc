@@ -6,11 +6,13 @@
 static const char neighbourhood_x[] = {-1, 0, 1, 1, 1, 0,-1,-1};
 static const char neighbourhood_y[] = {-1,-1,-1, 0, 1, 1, 1, 0};
 
+//#define DEBUG_PRINT
+
 void watershed(int width, int height,
                cl::Buffer& src,
                cl::Buffer& labeled,
                ProgramCache& cache,
-               cl::CommandQueue queue)
+               cl::CommandQueue& queue)
 
 {
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
@@ -49,8 +51,12 @@ void watershed(int width, int height,
     descent_kernel.setArg(5, width);
     descent_kernel.setArg(6, height);
 
-    size_t global_width = width / (block_size - 2) * block_size;
-    size_t global_height = height / (block_size - 2) * block_size;
+    size_t global_width = (width / (block_size - 2) + 1) * block_size;
+    size_t global_height = (height / (block_size - 2) + 1) * block_size;
+
+#ifdef DEBUG_PRINT
+    std::cout << "global width=" << global_width << " global height=" << global_height << std::endl;
+#endif
 
     cl::NDRange NullRange;
     cl::NDRange global(global_width, global_height);
@@ -60,7 +66,9 @@ void watershed(int width, int height,
 
     status = queue.enqueueNDRangeKernel(descent_kernel, NullRange, global, local);
 
+#ifdef DEBUG_PRINT
     std::cout << "kernel execution " << status << std::endl;
+#endif
 
    // queue.flush();
    // queue.enqueueBarrier();
@@ -99,12 +107,12 @@ void watershed(int width, int height,
         old_val = new_val;
         status = queue.enqueueNDRangeKernel(minima_kernel, NullRange, global, local);
         queue.enqueueReadBuffer(counter, CL_TRUE, 0, sizeof(int), &new_val);
-       // std::cout << "new_val: " << new_val << std::endl;
         c++;
     }
 
+#ifdef DEBUG_PRINT
     std::cout << "step 2: " << c << " iterations" << std::endl;
-
+#endif
     //preparing plateau kernel
 
     queue.enqueueWriteBuffer(counter, CL_TRUE, 0, sizeof(int), &counter_tmp);
@@ -129,11 +137,12 @@ void watershed(int width, int height,
         old_val = new_val;
         status = queue.enqueueNDRangeKernel(plateau_kernel, NullRange, global, local);
         queue.enqueueReadBuffer(counter, CL_TRUE, 0, sizeof(int), &new_val);
-       // std::cout << "\tnew_val: " << new_val << std::endl;
         c++;
     }
 
+#ifdef DEBUG_PRINT
     std::cout << "step 3: " << c << " iterations" << std::endl;
+#endif
 
     //preparing flood kernel
 
@@ -152,13 +161,16 @@ void watershed(int width, int height,
     int new_block_size = 16;
     local = cl::NDRange(new_block_size, new_block_size);
 
-    int n_width = ((width - 1) / new_block_size + 1) * new_block_size;
-    int n_height = ((height - 1) / new_block_size + 1) * new_block_size;
+    int n_width = ((width - 1) / new_block_size + 2) * new_block_size;
+    int n_height = ((height - 1) / new_block_size + 2) * new_block_size;
 
     global = cl::NDRange(n_width, n_height);
 
+#ifdef DEBUG_PRINT
+    std::cout << "flood kernel invocation params:" << std::endl;
     std::cout << "local: " << local[0] << ", " << local[1] << std::endl;
     std::cout << "global: " << global[0] << ", " << global[1] << std::endl;
+#endif
 
 #ifdef OPENCL_PROFILE
     cl::Event last_event;
@@ -173,9 +185,12 @@ void watershed(int width, int height,
 #else
         queue.enqueueReadBuffer(counter, CL_TRUE, 0, sizeof(int), &new_val);
 #endif
- //       std::cout << "\tnew_val: " << new_val << std::endl;
         c++;
     }
+
+#ifdef DEBUG_PRINT
+    std::cout << "step 4: " << c << " iterations" << std::endl;
+#endif
 
 #ifdef OPENCL_PROFILE
     last_event.wait();

@@ -42,7 +42,8 @@ __kernel void descent_kernel(
 
     if ((bx == 0 && tx == 0) || (by == 0 && ty == 0) ||
             (bx == (w / size - 1) && tx == bdx - 1) ||
-            (by == (h / size - 1) && ty == bdy - 1)) {
+            (by == (h / size - 1) && ty == bdy - 1) ||
+            img_x >= w || img_y >= h) {
 
         s_I[INDEX(ty,tx,BLOCK_SIZE)] = INF;
 
@@ -53,7 +54,7 @@ __kernel void descent_kernel(
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    if (j < new_h && i < new_w && ghost == 0) {
+    if (j < new_h && i < new_w && ghost == 0 && img_x < w && img_y < h) {
         float I_q_min = INF;
         float I_p = s_I[INDEX(ty,tx,BLOCK_SIZE)];
         //tex2D(img,img_x,img_y);
@@ -134,17 +135,21 @@ __kernel void minima_kernel(
     int true_p = INDEX(img_y,img_x,w);
     int s_p = INDEX(ty,tx,BLOCK_SIZE);
 
-    int new_w = w + w * 2;
-    int new_h = h + h * 2;
+    int new_w = w + w / 2;
+    int new_h = h + h / 2;
 
     int ghost =  (tx == 0 || ty == 0 ||
     tx == bdx - 1 || ty == bdy - 1) ? 1 : 0;
 
     if ((bx == 0 && tx == 0) || (by == 0 && ty == 0) ||
         (bx == (w / size - 1) && tx == bdx - 1) ||
-        (by == (h / size - 1) && ty == bdy - 1)) {
+        (by == (h / size - 1) && ty == bdy - 1) ||
+        img_x >= w || img_y >= h)
+    {
         s_L[INDEX(ty,tx,BLOCK_SIZE)] = INF;
-    } else {
+    }
+    else
+    {
         s_L[s_p] = L[INDEX(img_y,img_x,w)];
     }
 
@@ -153,7 +158,7 @@ __kernel void minima_kernel(
 
     int active = (j < new_h && i < new_w && s_L[s_p] > 0) ? 1 : 0;
 
-    if (active == 1 && ghost == 0) {
+    if (active == 1 && ghost == 0 && img_x < w && img_y < h) {
         for (int k = 0; k < 8; k++) {
             int n_x = N_xs[k] + tx; int n_y = N_ys[k] + ty;
             int s_q = INDEX(n_y,n_x,BLOCK_SIZE);
@@ -198,8 +203,8 @@ __kernel void plateau_kernel(
     int img_y = L2I(j,ty);
     int true_p = INDEX(img_y,img_x,w);
     int p = INDEX(ty,tx,BLOCK_SIZE);
-    int new_w = w + w * 2;
-    int new_h = h + h * 2;
+    int new_w = w + w / 2;
+    int new_h = h + h / 2;
 
     int ghost = (tx == 0 || ty == 0 ||
                 tx == bdx - 1 || ty == bdy - 1);
@@ -207,7 +212,8 @@ __kernel void plateau_kernel(
     // Load data into shared memory.
     if ((bx == 0 && tx == 0) || (by == 0 && ty == 0) ||
             (bx == (w / size - 1) && tx == bdx - 1) ||
-            (by == (h / size - 1) && ty == bdy - 1)) {
+            (by == (h / size - 1) && ty == bdy - 1) ||
+            img_x >= w || img_y >= h) {
         s_L[INDEX(ty,tx,BLOCK_SIZE)] = INF;
     } else {
         s_L[INDEX(ty,tx,BLOCK_SIZE)] = L[INDEX(img_y,img_x,w)];
@@ -216,8 +222,9 @@ __kernel void plateau_kernel(
     barrier(CLK_LOCAL_MEM_FENCE);
 
     if (j < new_h && i < new_w &&
-        s_L[p] == PLATEAU && ghost == 0) {
-        float I_p = src[img_y * w + img_x];
+        s_L[p] == PLATEAU && ghost == 0 && img_x < w && img_y < h) {
+        //float I_p = src[img_y * w + img_x];
+        float I_p = s_L[INDEX(ty,tx,BLOCK_SIZE)];
         //tex2D(img,img_x,img_y);
         float I_q;
         int n_x, n_y; float L_q;
