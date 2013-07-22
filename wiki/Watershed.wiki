@@ -8,7 +8,7 @@ OpenCL implementation based on:
 [https://github.com/louismullie/watershed-cuda]
 
 
-= Impelmentation =
+= Implementation =
 
 Watershed algorithm can be found in /segment/opencl.
 
