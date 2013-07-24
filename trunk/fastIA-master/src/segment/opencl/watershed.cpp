@@ -8,13 +8,38 @@ static const char neighbourhood_y[] = {-1,-1,-1, 0, 1, 1, 1, 0};
 
 //#define DEBUG_PRINT
 
+#define TIME_DIVISOR (1000000.0f)
+
+#ifdef OPENCL_PROFILE
+
+float watershed_descent_kernel_time;
+float watershed_increment_kernel_time;
+float watershed_minima_kernel_time;
+float watershed_plateau_kernel_time;
+float watershed_flood_kernel_time;
+
+int watershed_minima_kernel_iter;
+int watershed_plateau_kernel_iter;
+int watershed_flood_kernel_iter;
+
+#endif
+
+
 void watershed(int width, int height,
                cl::Buffer& src,
                cl::Buffer& labeled,
                ProgramCache& cache,
                cl::CommandQueue& queue)
-
 {
+
+#ifdef OPENCL_PROFILE
+    watershed_descent_kernel_time = 0;
+    watershed_increment_kernel_time = 0;
+    watershed_minima_kernel_time = 0;
+    watershed_plateau_kernel_time = 0;
+    watershed_flood_kernel_time = 0;
+#endif
+
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
     cl::Program& program = cache.getProgram("Watershed");
@@ -64,7 +89,24 @@ void watershed(int width, int height,
 
     cl_int status;
 
+#ifdef OPENCL_PROFILE
+    {
+        VECTOR_CLASS<cl::Event> events_vector(1);
+        status = queue.enqueueNDRangeKernel(descent_kernel, NullRange, global, local, __null, &events_vector[0]);
+
+        cl::WaitForEvents(events_vector);
+
+        cl::Event& event = events_vector[0];
+
+        cl_ulong start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+        cl_ulong end = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+        cl_ulong total_time = end - start;
+
+        watershed_descent_kernel_time = total_time;
+    }
+#else
     status = queue.enqueueNDRangeKernel(descent_kernel, NullRange, global, local);
+#endif
 
 #ifdef DEBUG_PRINT
     std::cout << "kernel execution " << status << std::endl;
@@ -73,16 +115,35 @@ void watershed(int width, int height,
    // queue.flush();
    // queue.enqueueBarrier();
 
-    //preparing increment kernel
+    /* PREPARING INCREMENT KERNEL */
 
     increment_kernel.setArg(0, labeled);
     increment_kernel.setArg(1, width);
     increment_kernel.setArg(2, height);
 
-    status = queue.enqueueNDRangeKernel(increment_kernel, NullRange, global, local);
-    queue.enqueueBarrier();
+#ifdef OPENCL_PROFILE
+    {
+        VECTOR_CLASS<cl::Event> events_vector(1);
+        status = queue.enqueueNDRangeKernel(increment_kernel, NullRange, global, local, __null, &events_vector[0]);
 
-    //preparing minima kernel
+        cl::WaitForEvents(events_vector);
+
+        cl::Event& event = events_vector[0];
+
+        cl_ulong start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+        cl_ulong end = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+        cl_ulong total_time = end - start;
+
+        watershed_increment_kernel_time = total_time;
+    }
+#else
+    status = queue.enqueueNDRangeKernel(increment_kernel, NullRange, global, local);
+#endif
+
+//    queue.enqueueBarrier();
+
+
+    /* PREPARING MINIMA KERNEL */
 
     int counter_tmp = 0;
     cl::Buffer counter(context, CL_MEM_READ_WRITE, sizeof(int));
@@ -102,10 +163,27 @@ void watershed(int width, int height,
     int new_val = -2;
     int c = 0;
 
+
     while(old_val != new_val)
     {
         old_val = new_val;
+
+#ifdef OPENCL_PROFILE
+        {
+            VECTOR_CLASS<cl::Event> events_vector(1);
+            status = queue.enqueueNDRangeKernel(minima_kernel, NullRange, global, local, __null, &events_vector[0]);
+
+            cl::WaitForEvents(events_vector);
+            cl::Event& event = events_vector[0];
+            cl_ulong start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+            cl_ulong end = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+            cl_ulong total_time = end - start;
+
+            watershed_minima_kernel_time += total_time;
+        }
+#else
         status = queue.enqueueNDRangeKernel(minima_kernel, NullRange, global, local);
+#endif
         queue.enqueueReadBuffer(counter, CL_TRUE, 0, sizeof(int), &new_val);
         c++;
     }
@@ -113,7 +191,8 @@ void watershed(int width, int height,
 #ifdef DEBUG_PRINT
     std::cout << "step 2: " << c << " iterations" << std::endl;
 #endif
-    //preparing plateau kernel
+
+    /* PREPARING PLATEAU KERNEL */
 
     queue.enqueueWriteBuffer(counter, CL_TRUE, 0, sizeof(int), &counter_tmp);
 
@@ -132,10 +211,30 @@ void watershed(int width, int height,
     new_val = -2;
     c = 0;
 
+#ifdef OPENCL_PROFILE
+    watershed_plateau_kernel_time = 0;
+#endif
+
     while(old_val != new_val)
     {
         old_val = new_val;
+
+#ifdef OPENCL_PROFILE
+        {
+            VECTOR_CLASS<cl::Event> events_vector(1);
+            status = queue.enqueueNDRangeKernel(plateau_kernel, NullRange, global, local, __null, &events_vector[0]);
+
+            cl::WaitForEvents(events_vector);
+            cl::Event& event = events_vector[0];
+            cl_ulong start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+            cl_ulong end = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+            cl_ulong total_time = end - start;
+
+            watershed_plateau_kernel_time += total_time;
+        }
+#else
         status = queue.enqueueNDRangeKernel(plateau_kernel, NullRange, global, local);
+#endif
         queue.enqueueReadBuffer(counter, CL_TRUE, 0, sizeof(int), &new_val);
         c++;
     }
@@ -176,10 +275,32 @@ void watershed(int width, int height,
     cl::Event last_event;
 #endif
 
+
+#ifdef OPENCL_PROFILE
+    watershed_flood_kernel_time = 0;
+#endif
+
     while(old_val != new_val)
     {
         old_val = new_val;
+
+#ifdef OPENCL_PROFILE
+        {
+            VECTOR_CLASS<cl::Event> events_vector(1);
+            status = queue.enqueueNDRangeKernel(flood_kernel, NullRange, global, local, __null, &events_vector[0]);
+
+            cl::WaitForEvents(events_vector);
+            cl::Event& event = events_vector[0];
+            cl_ulong start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+            cl_ulong end = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+            cl_ulong total_time = end - start;
+
+            watershed_flood_kernel_time += total_time;
+        }
+#else
         status = queue.enqueueNDRangeKernel(flood_kernel, NullRange, global, local);
+#endif
+
 #ifdef OPENCL_PROFILE
         queue.enqueueReadBuffer(counter, CL_TRUE, 0, sizeof(int), &new_val, __null, &last_event);
 #else
@@ -187,6 +308,14 @@ void watershed(int width, int height,
 #endif
         c++;
     }
+
+#ifdef OPENCL_PROFILE
+    watershed_descent_kernel_time /= TIME_DIVISOR;
+    watershed_increment_kernel_time /= TIME_DIVISOR;
+    watershed_minima_kernel_time /= TIME_DIVISOR;
+    watershed_plateau_kernel_time /= TIME_DIVISOR;
+    watershed_flood_kernel_time /= TIME_DIVISOR;
+#endif
 
 #ifdef DEBUG_PRINT
     std::cout << "step 4: " << c << " iterations" << std::endl;
@@ -199,6 +328,20 @@ void watershed(int width, int height,
     cl_ulong end = last_event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
     cl_ulong total_time = end - start;
 
-    setLastExecutionTime(total_time/1000000.0f);
+    setLastExecutionTime(total_time/TIME_DIVISOR);
 #endif
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -12,24 +12,32 @@
 
 //#include "opencv2/ocl/ocl.hpp"
 
+#ifdef OPENCL_PROFILE
+extern float watershed_descent_kernel_time;
+extern float watershed_increment_kernel_time;
+extern float watershed_minima_kernel_time;
+extern float watershed_plateau_kernel_time;
+extern float watershed_flood_kernel_time;
+#endif
+
 
 const static char* input_files[] = {
-    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_128-fill_25.png",
-    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_128-fill_50.png",
-    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_128-fill_100.png",
-    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_256-fill_25.png",
-    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_256-fill_50.png",
-    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_256-fill_100.png",
-    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_512-fill_25.png",
-    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_512-fill_50.png",
-    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_512-fill_100.png",
-    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_1024-fill_25.png",
-    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_1024-fill_50.png",
-    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_1024-fill_100.png",
-    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_2048-fill_25.png",
-    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_2048-fill_50.png",
-    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_2048-fill_90.png",
-    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_4096-fill_50.png",
+//    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_128-fill_25.png",
+//    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_128-fill_50.png",
+//    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_128-fill_100.png",
+//    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_256-fill_25.png",
+//    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_256-fill_50.png",
+//    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_256-fill_100.png",
+//    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_512-fill_25.png",
+//    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_512-fill_50.png",
+//    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_512-fill_100.png",
+//    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_1024-fill_25.png",
+//    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_1024-fill_50.png",
+//    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_1024-fill_100.png",
+//    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_2048-fill_25.png",
+//    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_2048-fill_50.png",
+//    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_2048-fill_90.png",
+//    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_4096-fill_50.png",
 
     "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_128-fill_25.png",
     "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_128-fill_50.png",
@@ -48,40 +56,40 @@ const static char* input_files[] = {
     "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_2048-fill_90.png",
     "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_4096-fill_50.png",
 
-    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_128-fill_25.png",
-    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_128-fill_50.png",
-    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_128-fill_100.png",
-    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_256-fill_25.png",
-    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_256-fill_50.png",
-    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_256-fill_100.png",
-    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_512-fill_25.png",
-    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_512-fill_50.png",
-    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_512-fill_100.png",
-    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_1024-fill_25.png",
-    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_1024-fill_50.png",
-    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_1024-fill_100.png",
-    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_2048-fill_25.png",
-    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_2048-fill_50.png",
-    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_2048-fill_90.png",
-    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_4096-fill_50.png",
+//    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_128-fill_25.png",
+//    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_128-fill_50.png",
+//    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_128-fill_100.png",
+//    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_256-fill_25.png",
+//    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_256-fill_50.png",
+//    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_256-fill_100.png",
+//    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_512-fill_25.png",
+//    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_512-fill_50.png",
+//    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_512-fill_100.png",
+//    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_1024-fill_25.png",
+//    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_1024-fill_50.png",
+//    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_1024-fill_100.png",
+//    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_2048-fill_25.png",
+//    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_2048-fill_50.png",
+//    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_2048-fill_90.png",
+//    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_4096-fill_50.png",
 
 
-    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_128-fill_25.png",
-    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_128-fill_50.png",
-    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_128-fill_100.png",
-    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_256-fill_25.png",
-    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_256-fill_50.png",
-    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_256-fill_100.png",
-    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_512-fill_25.png",
-    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_512-fill_50.png",
-    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_512-fill_100.png",
-    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_1024-fill_25.png",
-    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_1024-fill_50.png",
-    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_1024-fill_100.png",
-    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_2048-fill_25.png",
-    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_2048-fill_50.png",
-    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_2048-fill_90.png",
-    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_4096-fill_50.png"
+//    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_128-fill_25.png",
+//    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_128-fill_50.png",
+//    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_128-fill_100.png",
+//    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_256-fill_25.png",
+//    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_256-fill_50.png",
+//    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_256-fill_100.png",
+//    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_512-fill_25.png",
+//    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_512-fill_50.png",
+//    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_512-fill_100.png",
+//    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_1024-fill_25.png",
+//    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_1024-fill_50.png",
+//    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_1024-fill_100.png",
+//    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_2048-fill_25.png",
+//    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_2048-fill_50.png",
+//    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_2048-fill_90.png",
+//    "/watershed/gaussian_blur_50x50/in-imrecon-gray-mask-size_4096-fill_50.png"
 };
 
 
@@ -148,12 +156,12 @@ void test_image(const char* filename)
         float total_time = getLastExecutionTime();
 
         std::cout << "Execution time in milliseconds = " << std::fixed << std::setprecision(3)
-                  << total_time << " ms" << std::endl;
-
-//        watershed(width, height, srcBuff, dstBuff);
-//        total_time = getLastExecutionTime();
-//        std::cout << "Execution time in milliseconds = " << std::fixed << std::setprecision(3)
-//                  << total_time << " ms" << std::endl;
+                  << total_time << " ms" << std::endl
+                  << "(1): " << watershed_descent_kernel_time << std::endl
+                  << "(2): " << watershed_increment_kernel_time << std::endl
+                  << "(3): " << watershed_minima_kernel_time << std::endl
+                  << "(4): " << watershed_plateau_kernel_time << std::endl
+                  << "(5): " << watershed_flood_kernel_time << std::endl;
 
 #ifdef DEBUG_PRINT
         std::cout << "reading output (labels)" << std::endl;
