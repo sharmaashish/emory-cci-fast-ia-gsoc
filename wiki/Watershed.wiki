@@ -57,6 +57,11 @@ Original microscopy data were preprocess with gaussian blur with radius=5.
 || *GeForce GT 430* || 26 || 18 || 6 || 111 || 77 || 11 || 849 || 483 || 34 || 7997 || 5077 || 129 || 70199 || 49283 || 14049 || 474620 ||
 || *Tesla C2070* || 18|| 12 || 4 || 41 || 29 || 7 || 231 || 123 || 13 || 1607 || 1037 || 39 || 13035 || 9230 || 2705 || 85839 ||
 
+http://emory-cci-fast-ia-gsoc.googlecode.com/svn/resources/chart.png
+
+http://emory-cci-fast-ia-gsoc.googlecode.com/svn/resources/chart_2.png
+
+
 Sample test data (256 - 20%, 256 - 50%, 256 - 100%):
 
 http://emory-cci-fast-ia-gsoc.googlecode.com/svn/test_data/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_256-fill_25.png http://emory-cci-fast-ia-gsoc.googlecode.com/svn/test_data/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_256-fill_50.png http://emory-cci-fast-ia-gsoc.googlecode.com/svn/test_data/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_256-fill_100.png
