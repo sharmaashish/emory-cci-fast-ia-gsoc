@@ -49,7 +49,9 @@ http://emory-cci-fast-ia-gsoc.googlecode.com/svn/test_data/watershed/other/out/w
 = Performance test =
 
 The testing dataset contains images of different sizes. Additionally, for each size there are three variants of image filling (20%, 50% and 100%).
-Original microscopy data were preprocess with gaussian blur with radius=5.
+Original microscopy data were preprocess with gaussian blur with radius=10.
+
+Original and preprocessed data are located in test_data directory.
 
 
 || || 128 (20%) || 128 (50%) || 128 (100%) || 256 (20%) || 256 (50%) || 256 (100%) || 512 (20%) || 512 (50%) || 512 (100%) || 1024 (20%) || 1024 (50%) || 1024 (100%) || 2048 (20%) || 2048 (50%) || 2048 (90%) || 4096 (50%) ||
@@ -61,10 +63,40 @@ http://emory-cci-fast-ia-gsoc.googlecode.com/svn/resources/chart.png
 
 http://emory-cci-fast-ia-gsoc.googlecode.com/svn/resources/chart_2.png
 
-
+<wiki:comment>
 Sample test data (256 - 20%, 256 - 50%, 256 - 100%):
+</wiki:comment>
 
+Sample test file (size: 256, fill: 100%)
+
+http://emory-cci-fast-ia-gsoc.googlecode.com/svn/test_data/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_256-fill_100.png
+
+Results (raw, edges, combined):
+
+http://emory-cci-fast-ia-gsoc.googlecode.com/svn/resources/_watershed_gaussian_blur_10x10_in-imrecon-gray-mask-size_256-fill_100_out.png
+http://emory-cci-fast-ia-gsoc.googlecode.com/svn/resources/_watershed_gaussian_blur_10x10_in-imrecon-gray-mask-size_256-fill_100_out_edges.png
+http://emory-cci-fast-ia-gsoc.googlecode.com/svn/resources/_watershed_gaussian_blur_10x10_in-imrecon-gray-mask-size_256-fill_100_out_combined.png
+
+<wiki:comment>
 http://emory-cci-fast-ia-gsoc.googlecode.com/svn/test_data/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_256-fill_25.png http://emory-cci-fast-ia-gsoc.googlecode.com/svn/test_data/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_256-fill_50.png http://emory-cci-fast-ia-gsoc.googlecode.com/svn/test_data/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_256-fill_100.png
+</wiki:comment>
+
+==Why less filled pictures take more time?==
+
+When image contains big areas of background, algorithm creates big basins. Big basins are inefficient in parallel watershed - they require a lot of iterations to propagate through image.
+
+As an example, lets take a picture:
+
+http://emory-cci-fast-ia-gsoc.googlecode.com/svn/test_data/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_1024-fill_50.png
+
+Combined output from watershed:
+
+http://emory-cci-fast-ia-gsoc.googlecode.com/svn/resources/_watershed_gaussian_blur_10x10_in-imrecon-gray-mask-size_1024-fill_50_out_combined.png
+
+Raw watershed output with the biggest basins marked:
+
+http://emory-cci-fast-ia-gsoc.googlecode.com/svn/resources/_watershed_gaussian_blur_10x10_in-imrecon-gray-mask-size_1024-fill_50_out_big_basin_example.png
+
 
 = Difficulties =
 
