@@ -97,10 +97,19 @@ Raw watershed output with the biggest basins marked:
 
 http://emory-cci-fast-ia-gsoc.googlecode.com/svn/resources/_watershed_gaussian_blur_10x10_in-imrecon-gray-mask-size_1024-fill_50_out_big_basin_example.png
 
+==Suggested solution==
+
+The current version of the algorithm works without any mask.
+Providing special mask to omit background points should fix the problem.
+User would have to provide the mask obtained from some kind of preprocessing (e.g. simple thresholding).
+
+==Another issue: oversegmentation==
+The result of the algorithm is heavily dependent on pre-processing methods. Perhaps other methods (e.g. diffusion instead of gaussian blur) would yield better results.
 
 = Difficulties =
-
-To Do
+Memory violation within the kernel can cause hard to find bugs.
+Some devices works fine and bug stay hidden. After running on another device, some unspecific errors may happen. Example: kernel tested on Nvidia GPU worked fine, but moved to CPU periodically caused segfaults in cv::Mat destructor.
+Good practice is to test OpenCL kernel on different platforms and devices.
 
 = Reference =
 
