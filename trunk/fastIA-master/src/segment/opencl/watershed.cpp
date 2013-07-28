@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+#define BLOCK_SIZE 6
+
 static const char neighbourhood_x[] = {-1, 0, 1, 1, 1, 0,-1,-1};
 static const char neighbourhood_y[] = {-1,-1,-1, 0, 1, 1, 1, 0};
 
@@ -42,7 +44,13 @@ void watershed(int width, int height,
 
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
-    cl::Program& program = cache.getProgram("Watershed");
+    std::stringstream params_stream;
+    params_stream << "-DBLOCK_SIZE=";
+    params_stream << BLOCK_SIZE;
+
+    std::string program_params = params_stream.str();
+
+    cl::Program& program = cache.getProgram("Watershed", program_params);
     
     cl::Kernel descent_kernel(program, "descent_kernel");
     cl::Kernel increment_kernel(program, "increment_kernel");
@@ -64,8 +72,9 @@ void watershed(int width, int height,
 
     queue.enqueueWriteBuffer(cl_neighbourhood_y, CL_TRUE, 0, sizeof(neighbourhood_y), neighbourhood_y);
 
-    const size_t block_size = 6;
-    cl::LocalSpaceArg local_mem = cl::__local(block_size * block_size * sizeof(float));
+    //const size_t block_size = 6;
+    //cl::LocalSpaceArg local_mem = cl::__local(block_size * block_size * sizeof(float));
+    cl::LocalSpaceArg local_mem = cl::__local(BLOCK_SIZE * BLOCK_SIZE * sizeof(float));
 
     //setting args for descent_kernel
     descent_kernel.setArg(0, src);
@@ -76,8 +85,8 @@ void watershed(int width, int height,
     descent_kernel.setArg(5, width);
     descent_kernel.setArg(6, height);
 
-    size_t global_width = (width / (block_size - 2) + 1) * block_size;
-    size_t global_height = (height / (block_size - 2) + 1) * block_size;
+    size_t global_width = (width / (BLOCK_SIZE - 2) + 1) * BLOCK_SIZE;
+    size_t global_height = (height / (BLOCK_SIZE - 2) + 1) * BLOCK_SIZE;
 
 #ifdef DEBUG_PRINT
     std::cout << "global width=" << global_width << " global height=" << global_height << std::endl;
@@ -85,7 +94,7 @@ void watershed(int width, int height,
 
     cl::NDRange NullRange;
     cl::NDRange global(global_width, global_height);
-    cl::NDRange local(block_size, block_size);
+    cl::NDRange local(BLOCK_SIZE, BLOCK_SIZE);
 
     cl_int status;
 

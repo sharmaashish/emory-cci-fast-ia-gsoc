@@ -22,6 +22,9 @@ extern float watershed_flood_kernel_time;
 
 
 const static char* input_files[] = {
+
+      "/watershed/in-imrecon-gray-mask-size_1024-fill_50_diffuse.png"
+
 //    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_128-fill_25.png",
 //    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_128-fill_50.png",
 //    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_128-fill_100.png",
@@ -39,22 +42,22 @@ const static char* input_files[] = {
 //    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_2048-fill_90.png",
 //    "/watershed/gaussian_blur_5x5/in-imrecon-gray-mask-size_4096-fill_50.png",
 
-    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_128-fill_25.png",
-    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_128-fill_50.png",
-    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_128-fill_100.png",
-    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_256-fill_25.png",
-    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_256-fill_50.png",
-    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_256-fill_100.png",
-    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_512-fill_25.png",
-    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_512-fill_50.png",
-    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_512-fill_100.png",
-    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_1024-fill_25.png",
-    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_1024-fill_50.png",
-    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_1024-fill_100.png",
-    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_2048-fill_25.png",
-    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_2048-fill_50.png",
-    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_2048-fill_90.png",
-    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_4096-fill_50.png",
+//    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_128-fill_25.png",
+//    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_128-fill_50.png",
+//    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_128-fill_100.png",
+//    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_256-fill_25.png",
+//    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_256-fill_50.png",
+//    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_256-fill_100.png",
+//    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_512-fill_25.png",
+//    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_512-fill_50.png",
+//    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_512-fill_100.png",
+//    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_1024-fill_25.png",
+//    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_1024-fill_50.png",
+//    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_1024-fill_100.png",
+//    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_2048-fill_25.png",
+//    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_2048-fill_50.png",
+//    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_2048-fill_90.png",
+//    "/watershed/gaussian_blur_10x10/in-imrecon-gray-mask-size_4096-fill_50.png",
 
 //    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_128-fill_25.png",
 //    "/watershed/gaussian_blur_20x20/in-imrecon-gray-mask-size_128-fill_50.png",

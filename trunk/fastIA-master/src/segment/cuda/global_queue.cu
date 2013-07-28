@@ -3,31 +3,22 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_NUM_BLOCKS	70
-//#include "global_sync.cu"
+#include "global_queue.cuh"
 
-#define WARP_SIZE 	32
-#define NUM_THREADS	512
-#define NUM_WARPS (NUM_THREADS / WARP_SIZE)
-#define LOG_NUM_THREADS 9
-#define LOG_NUM_WARPS (LOG_NUM_THREADS - 5)
+__device__ volatile int inQueueSize[QUEUE_MAX_NUM_BLOCKS];
+__device__ volatile int *inQueuePtr1[QUEUE_MAX_NUM_BLOCKS];
+__device__ volatile int inQueueHead[QUEUE_MAX_NUM_BLOCKS];
+__device__ volatile int outQueueMaxSize[QUEUE_MAX_NUM_BLOCKS];
+__device__ volatile int outQueueHead[QUEUE_MAX_NUM_BLOCKS];
+__device__ volatile int *outQueuePtr2[QUEUE_MAX_NUM_BLOCKS];
 
-#define SCAN_STRIDE (WARP_SIZE + WARP_SIZE / 2 + 1)
-
-__device__ volatile int inQueueSize[MAX_NUM_BLOCKS];
-__device__ volatile int *inQueuePtr1[MAX_NUM_BLOCKS];
-__device__ volatile int inQueueHead[MAX_NUM_BLOCKS];
-__device__ volatile int outQueueMaxSize[MAX_NUM_BLOCKS];
-__device__ volatile int outQueueHead[MAX_NUM_BLOCKS];
-__device__ volatile int *outQueuePtr2[MAX_NUM_BLOCKS];
-
-__device__ volatile int *curInQueue[MAX_NUM_BLOCKS];
-__device__ volatile int *curOutQueue[MAX_NUM_BLOCKS];
+__device__ volatile int *curInQueue[QUEUE_MAX_NUM_BLOCKS];
+__device__ volatile int *curOutQueue[QUEUE_MAX_NUM_BLOCKS];
 __device__ volatile int execution_code;
 
 
 // This variables are used for debugging purposes only
-__device__ volatile int totalInserts[MAX_NUM_BLOCKS];
+__device__ volatile int totalInserts[QUEUE_MAX_NUM_BLOCKS];
 
 
 // Utils...
@@ -37,12 +28,12 @@ __device__ void scan(const int* values, int* exclusive) {
 	// Reserve a half warp of extra space plus one per warp in the block.
 	// This is exactly enough space to avoid comparisons in the multiscan
 	// and to avoid bank conflicts.
-	__shared__ volatile int scan[NUM_WARPS * SCAN_STRIDE];
+    __shared__ volatile int scan[QUEUE_NUM_WARPS * QUEUE_SCAN_STRIDE];
 	int tid = threadIdx.x;
-	int warp = tid / WARP_SIZE;
-	int lane = (WARP_SIZE - 1) & tid;
+    int warp = tid / QUEUE_WARP_SIZE;
+    int lane = (QUEUE_WARP_SIZE - 1) & tid;
 
-	volatile int* s = scan + SCAN_STRIDE * warp + lane + WARP_SIZE / 2;
+    volatile int* s = scan + QUEUE_SCAN_STRIDE * warp + lane + QUEUE_WARP_SIZE / 2;
 	s[-16] = 0;
 
 	// Read from global memory.
@@ -61,20 +52,20 @@ __device__ void scan(const int* values, int* exclusive) {
 
 	// Synchronize to make all the totals available to the reduction code.
 	__syncthreads();
-	__shared__ volatile int totals[NUM_WARPS + NUM_WARPS / 2];
-	if(tid < NUM_WARPS) {
+    __shared__ volatile int totals[QUEUE_NUM_WARPS + QUEUE_NUM_WARPS / 2];
+    if(tid < QUEUE_NUM_WARPS) {
 		// Grab the block total for the tid'th block. This is the last element
 		// in the block's scanned sequence. This operation avoids bank 
 		// conflicts.
-		int total = scan[SCAN_STRIDE * tid + WARP_SIZE / 2 + WARP_SIZE - 1];
+        int total = scan[QUEUE_SCAN_STRIDE * tid + QUEUE_WARP_SIZE / 2 + QUEUE_WARP_SIZE - 1];
 
 		totals[tid] = 0;
-		volatile int* s2 = totals + NUM_WARPS / 2 + tid;
+        volatile int* s2 = totals + QUEUE_NUM_WARPS / 2 + tid;
 		int totalsSum = total;
 		s2[0] = total;
 
 #pragma unroll
-		for(int i = 0; i < LOG_NUM_WARPS; ++i) {
+        for(int i = 0; i < LOG_QUEUE_NUM_WARPS; ++i) {
 			int offset = 1<< i;
 			totalsSum += s2[-offset];
 			s2[0] = totalsSum;  
@@ -110,8 +101,8 @@ __device__ int queueElement(int *outQueueCurPtr, int *elements){
 __device__ int queueElement(int *elements){
 	int queue_index = -1;
 #ifdef	PREFIX_SUM
-	__shared__ int writeAddr[NUM_THREADS];
-	__shared__ int exclusiveScan[NUM_THREADS];
+    __shared__ int writeAddr[QUEUE_NUM_THREADS];
+    __shared__ int exclusiveScan[QUEUE_NUM_THREADS];
 	__shared__ int global_queue_index;
 
 	if(threadIdx.x == 0){
@@ -134,7 +125,7 @@ __device__ int queueElement(int *elements){
 //	}
 
 //	__syncthreads();
-//	for(int i = threadIdx.x; i < exclusiveScan[NUM_THREADS-1]+writeAddr[NUM_THREADS-1]; i+=blockDim.x){
+//	for(int i = threadIdx.x; i < exclusiveScan[QUEUE_NUM_THREADS-1]+writeAddr[QUEUE_NUM_THREADS-1]; i+=blockDim.x){
 //		curOutQueue[blockIdx.x][global_queue_index+i] = localElements[i];
 //	}
 
@@ -151,11 +142,11 @@ __device__ int queueElement(int *elements){
 
 	// thread 0 updates head of the queue
 	if(threadIdx.x == 0){
-		outQueueHead[blockIdx.x]+=exclusiveScan[NUM_THREADS-1]+writeAddr[NUM_THREADS-1];
+        outQueueHead[blockIdx.x]+=exclusiveScan[QUEUE_NUM_THREADS-1]+writeAddr[QUEUE_NUM_THREADS-1];
 		if(outQueueHead[blockIdx.x] >= outQueueMaxSize[blockIdx.x]){
 			outQueueHead[blockIdx.x] = outQueueMaxSize[blockIdx.x];
 		}
-//		printf("Inserting = %d - outQueueHead = %d\n", exclusiveScan[NUM_THREADS-1]+writeAddr[NUM_THREADS-1], outQueueHead[blockIdx.x]);
+//		printf("Inserting = %d - outQueueHead = %d\n", exclusiveScan[QUEUE_NUM_THREADS-1]+writeAddr[QUEUE_NUM_THREADS-1], outQueueHead[blockIdx.x]);
 	}
 #else
 	if(elements[0] != 0){
@@ -177,8 +168,8 @@ __device__ int queueElement(int *elements){
 __device__ int queueElement(int element){
 	int queue_index = -1;
 #ifdef	PREFIX_SUM
-	__shared__ int writeAddr[NUM_THREADS];
-	__shared__ int exclusiveScan[NUM_THREADS];
+    __shared__ int writeAddr[QUEUE_NUM_THREADS];
+    __shared__ int exclusiveScan[QUEUE_NUM_THREADS];
 	__shared__ int global_queue_index;
 
 	if(threadIdx.x == 0){
@@ -201,7 +192,7 @@ __device__ int queueElement(int element){
 
 	// thread 0 updates head of the queue
 	if(threadIdx.x == 0){
-		outQueueHead[blockIdx.x]+=exclusiveScan[NUM_THREADS-1]+writeAddr[NUM_THREADS-1];
+        outQueueHead[blockIdx.x]+=exclusiveScan[QUEUE_NUM_THREADS-1]+writeAddr[QUEUE_NUM_THREADS-1];
 	}
 #else
 	if(element != -1){
@@ -271,7 +262,7 @@ getWork:
 	}
 
 	// Nothing to do by default
-	int element = -1;
+    int element = -1;
 	if(queue_index < inQueueSize[blockIdx.x]){
 		element = curInQueue[blockIdx.x][queue_index];
 		gotWork = 1;
@@ -350,7 +341,7 @@ __global__ void initQueueId(int *inQueueData, int dataElements, int *outQueueDat
 
 
 __global__ void initQueueVector(int **inQueueData, int *inQueueSizes, int **outQueueData, int numImages){
-	if(threadIdx.x < MAX_NUM_BLOCKS && threadIdx.x < numImages){
+    if(threadIdx.x < QUEUE_MAX_NUM_BLOCKS && threadIdx.x < numImages){
 //		printf("initQueueVector: tid - %d inQueueSize[%d] = %d pointer = %p outPtr = %p\n", threadIdx.x, threadIdx.x, inQueueSizes[threadIdx.x], inQueueData[threadIdx.x], outQueueData[threadIdx.x]);
 
 		// Simply assign input data pointers/number of elements to the queue
@@ -398,7 +389,7 @@ __global__ void listReduceKernel(int* d_Result, int *seeds, unsigned char *image
 	int loopIt = 0;
 	int workUnit = -1;
 	int tid = threadIdx.x;
-	__shared__ int localQueue[NUM_THREADS][5];
+    __shared__ int localQueue[QUEUE_NUM_THREADS][5];
 
 	do{
 		int x, y;
@@ -484,7 +475,7 @@ extern "C" int listComputation(int *h_Data, int dataElements, int *d_seeds, unsi
 	cudaMemset((void *)d_Result, 0, sizeof(int));
 
 //	printf("Run computation kernel!\n");
-	listReduceKernel<<<blockNum, NUM_THREADS>>>(d_Result, d_seeds, d_image, ncols, nrows);
+    listReduceKernel<<<blockNum, QUEUE_NUM_THREADS>>>(d_Result, d_seeds, d_image, ncols, nrows);
 
 //	cutilCheckMsg("histogramKernel() execution failed\n");
 	int h_Result;
@@ -506,7 +497,7 @@ __global__ void morphReconKernel(int* d_Result, int *seeds, unsigned char *image
 	int loopIt = 0;
 	int workUnit = -1;
 	int tid = threadIdx.x;
-	__shared__ int localQueue[NUM_THREADS][5];
+    __shared__ int localQueue[QUEUE_NUM_THREADS][5];
 
 //	printf("inQueueSize = %d\n",inQueueSize[blockIdx.x]);
 	__syncthreads();
@@ -582,7 +573,7 @@ __global__ void morphReconKernelVector(int* d_Result, int **d_SeedsList, unsigne
 	int loopIt = 0;
 	int workUnit = -1;
 	int tid = threadIdx.x;
-	__shared__ int localQueue[NUM_THREADS][9];
+    __shared__ int localQueue[QUEUE_NUM_THREADS][9];
 
 	__syncthreads();
 	do{
@@ -726,7 +717,7 @@ __global__ void morphReconKernelVector(int* d_Result, int **d_SeedsList, unsigne
 ///	cudaMemcpy(d_nrows, h_nrows, sizeof(int) * nImages, cudaMemcpyHostToDevice);
 ///
 ///	printf("Run computation kernel!\n");
-///	morphReconKernelVector<<<blockNum, NUM_THREADS>>>(d_Result, d_Seeds, d_Images, d_ncols, d_nrows);
+///	morphReconKernelVector<<<blockNum, QUEUE_NUM_THREADS>>>(d_Result, d_Seeds, d_Images, d_ncols, d_nrows);
 ///
 ///	cudaError_t errorCode = cudaGetLastError();
 ///	const char *error = cudaGetErrorString(errorCode);
@@ -794,7 +785,7 @@ extern "C" int morphReconVector(int nImages, int **h_InputListPtr, int* h_ListSi
 	cudaMemcpy(d_nrows, h_nrows, sizeof(int) * nImages, cudaMemcpyHostToDevice);
 
 //	printf("Run computation kernel!\n");
-	morphReconKernelVector<<<blockNum, NUM_THREADS>>>(d_Result, d_Seeds, d_Images, d_ncols, d_nrows, connectivity);
+    morphReconKernelVector<<<blockNum, QUEUE_NUM_THREADS>>>(d_Result, d_Seeds, d_Images, d_ncols, d_nrows, connectivity);
 
 	if(cudaGetLastError() != cudaSuccess){
 		cudaError_t errorCode = cudaGetLastError();
@@ -841,7 +832,7 @@ __global__ void morphReconKernelSpeedup(int* d_Result, int *d_Seeds, unsigned ch
 	int loopIt = 0;
 	int workUnit = -1;
 	int tid = threadIdx.x;
-	__shared__ int localQueue[NUM_THREADS][9];
+    __shared__ int localQueue[QUEUE_NUM_THREADS][9];
 
 	__syncthreads();
 	do{
@@ -1004,7 +995,7 @@ extern "C" int morphReconSpeedup( int *g_InputListPtr, int h_ListSize, int *g_Se
 
 
 //	printf("Run computation kernel!\n");
-	morphReconKernelSpeedup<<<nBlocks, NUM_THREADS>>>(d_Result, g_Seed, g_Image, h_ncols, h_nrows, connectivity);
+    morphReconKernelSpeedup<<<nBlocks, QUEUE_NUM_THREADS>>>(d_Result, g_Seed, g_Image, h_ncols, h_nrows, connectivity);
 
 	if(cudaGetLastError() != cudaSuccess){
 		cudaError_t errorCode = cudaGetLastError();
@@ -1050,7 +1041,7 @@ extern "C" int morphRecon(int *d_input_list, int dataElements, int *d_seeds, uns
 	cudaMemset((void *)d_Result, 0, sizeof(int));
 
 //	printf("Run computation kernel!\n");
-	morphReconKernel<<<blockNum, NUM_THREADS>>>(d_Result, d_seeds, d_image, ncols, nrows);
+    morphReconKernel<<<blockNum, QUEUE_NUM_THREADS>>>(d_Result, d_seeds, d_image, ncols, nrows);
 	cudaError_t errorCode = cudaGetLastError();
 	const char *error = cudaGetErrorString(errorCode);
 	printf("Error after morphRecon = %s\n", error);
