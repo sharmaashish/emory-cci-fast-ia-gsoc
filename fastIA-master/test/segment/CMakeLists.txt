@@ -7,6 +7,7 @@ set(tests sample_test bwareopenTest deconvTest distTransformTest
     imfillTest imreconChunkTest watershedTest watershedNewTest watershedOpenCV #oclTest
     pixel-opsTest)
 
+
 foreach(test ${tests})
 	add_executable(${test}_segment ${test}.cpp)
 
@@ -15,3 +16,15 @@ foreach(test ${tests})
 
 	add_test(${test}_segment ${EXECUTABLE_OUTPUT_PATH}/${test}_segment.exe)
 endforeach(test)
+
+#set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_20,code=sm_20)
+#set(BUILD_SHARED_LIBS OFF)
+
+set(CUDA_SEPARABLE_COMPILATION ON)
+cuda_add_executable(globalQueueTest_segment
+  ${segment_cuda_SOURCE_DIR}/global_queue.cuh
+  ${segment_cuda_SOURCE_DIR}/global_queue.cu
+  cuda/globalQueueTest.cu
+  OPTIONS -gencode=arch=compute_20,code=sm_20
+ )
+target_link_libraries(globalQueueTest_segment boost_unit_test_framework)

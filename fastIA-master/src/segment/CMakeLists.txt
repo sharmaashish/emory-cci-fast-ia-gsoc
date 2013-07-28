@@ -16,7 +16,7 @@ set(libname segment)
 if(CUDA_FOUND)
 	add_subdirectory(cuda)
 	include_directories(${segment_cuda_SOURCE_DIR})
-	link_directories(${segment_cuda_BINARY_DIR})	
+        link_directories(${segment_cuda_BINARY_DIR})
     
 	cuda_add_library("${libname}" SHARED ${libsrcs} ${gpulibsrcs})
     
