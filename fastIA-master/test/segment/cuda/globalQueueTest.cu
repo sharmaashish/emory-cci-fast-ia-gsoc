@@ -185,7 +185,10 @@ BOOST_AUTO_TEST_CASE(test1)
 
     int *host_dequeueVector = (int *) malloc(512 * sizeof(int));
 
-    checkError(cudaMemcpy(&host_dequeueVector, device_dequeueVector,
+    if(host_dequeueVector == NULL)
+        std::cout << "malloc failed!" << std::endl;
+
+    checkError(cudaMemcpy(host_dequeueVector, device_dequeueVector,
                           512 * sizeof(int), cudaMemcpyDeviceToHost));
 
     for(int i = 0;i < 512; ++i)
