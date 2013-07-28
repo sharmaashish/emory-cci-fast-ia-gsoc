@@ -4,6 +4,7 @@
 #include <boost/test/unit_test.hpp>
 #include "TestUtils.h"
 
+#include <iostream>
 #include <stdlib.h>
 #include <stdio.h>
 #include <cfloat>
@@ -12,6 +13,8 @@
 #include <cuda_runtime_api.h>
 
 #include "global_queue.cuh"
+
+#include "cuda/cuda_errors.h"
 
 // created for gpu testing purposes
 // compilation: nvcc DoNothingKernel.cu -o DoNothingKernel
@@ -136,6 +139,14 @@ int my_listComputation(int *h_Data, int dataElements, int *d_seeds, unsigned cha
 }
 
 
+__global__ void dequeue_test(int* device_result)
+{
+    int loopIt = 0;
+    int workUnit = dequeueElement(&loopIt);
+
+    device_result[blockIdx.x * blockDim.x + threadIdx.x] = workUnit;
+}
+
 BOOST_AUTO_TEST_CASE(test1)
 {
     std::cout << "GLOBAL QUEUE TEST" << std::endl;
@@ -151,17 +162,34 @@ BOOST_AUTO_TEST_CASE(test1)
     int *device_queueInitData;
     unsigned int initDataSizeByte = queueInitDataSize * sizeof(int);
 
-    cudaMalloc(&device_queueInitData, initDataSizeByte);
-    cudaMemcpy(device_queueInitData, host_queueInitData,
-               initDataSizeByte, cudaMemcpyHostToDevice);
+    checkError(cudaMalloc(&device_queueInitData, initDataSizeByte));
+    checkError(cudaMemcpy(device_queueInitData, host_queueInitData,
+               initDataSizeByte, cudaMemcpyHostToDevice));
 
     int *device_outVector;
-    cudaMalloc(&device_outVector, queueInitDataSize * sizeof(int));
+    checkError(cudaMalloc(&device_outVector, queueInitDataSize * sizeof(int)));
 
 
     initQueue<<<1, 1>>>(device_queueInitData, queueInitDataSize,
                         device_outVector, queueInitDataSize);
 
+    lastError();
+
+    int *device_dequeueVector;
+
+    checkError(cudaMalloc(&device_dequeueVector, queueInitDataSize * sizeof(int)));
+
+    dequeue_test<<<1, 512>>>(device_dequeueVector);
+
+    lastError();
+
+    int *host_dequeueVector = (int *) malloc(512 * sizeof(int));
+
+    checkError(cudaMemcpy(&host_dequeueVector, device_dequeueVector,
+                          512 * sizeof(int), cudaMemcpyDeviceToHost));
+
+    for(int i = 0;i < 512; ++i)
+    {
+        std::cout << "i[" << i << "]: " << host_dequeueVector[i] << std::endl;
+    }
 }
-
-
