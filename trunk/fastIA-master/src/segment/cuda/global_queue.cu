@@ -284,6 +284,15 @@ getWork:
 	return element;
 }
 
+
+
+__device__ void setCurrentQueue(int currentQueueIdx, int queueIdx)
+{
+	curInQueue[currentQueueIdx] = inQueuePtr1[queueIdx];
+	curOutQueue[currentQueueIdx] = outQueuePtr2[queueIdx];
+}
+
+
 // Initialized queue data structures:
 // Initial assumptions: this first kernel should be launched with number of threads at least equal
 // to the number of block used with the second kernel

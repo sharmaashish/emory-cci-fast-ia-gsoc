@@ -39,6 +39,8 @@ __device__ int dequeueElement(int *loopIt);
 __device__ int propagate(int *seeds, unsigned char *image,
                          int x, int y, int ncols, unsigned char pval);
 
+__device__ void setCurrentQueue(int currentQueueIdx, int queueIdx);
+
 __global__ void initQueue(int *inQueueData, int dataElements,
                           int *outQueueData, int outMaxSize);
 

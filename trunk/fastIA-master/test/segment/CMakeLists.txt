@@ -25,6 +25,6 @@ cuda_add_executable(globalQueueTest_segment
   ${segment_cuda_SOURCE_DIR}/global_queue.cuh
   ${segment_cuda_SOURCE_DIR}/global_queue.cu
   cuda/globalQueueTest.cu
-  OPTIONS -gencode=arch=compute_20,code=sm_20
+  OPTIONS -DPREFIX_SUM -gencode=arch=compute_20,code=sm_20
  )
 target_link_libraries(globalQueueTest_segment boost_unit_test_framework)
