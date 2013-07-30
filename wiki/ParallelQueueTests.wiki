@@ -13,6 +13,11 @@ To take advantage of this feature, appropriate changes in cmake configuration ha
 Parallel queue implementation is in file 'global_queue.cu'. To use code from this file in tests, header 'global_queue.cuh' has been created.
 
 == test 1 ==
+
+Very simple test, takes items from queue and copy to given pointer.
+
+Invocation for this kernel can be found in 'initializeAndDequeue' boost test case (globalQueueTest.cu).
+
 {{{
 __global__ void dequeue_test(int* device_result)
 {
@@ -26,6 +31,14 @@ __global__ void dequeue_test(int* device_result)
 }}}
 
 == test 2 ==
+
+This kernel performs parallel reduction on data obtained from queue.
+After each iteration, sum of obtained elements is added to the queue.
+
+Finally, kernel writes value from last reduction to given pointer (output_sum).
+
+Invocation for this kernel can be found in 'sum' boost test case (globalQueueTest.cu).
+
 {{{
 __global__ void sum_test(int* output_sum, int iterations)
 {
