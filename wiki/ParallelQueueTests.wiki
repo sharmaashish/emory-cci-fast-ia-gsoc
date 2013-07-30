@@ -39,6 +39,13 @@ Finally, kernel writes value from last reduction to given pointer (output_sum).
 
 Invocation for this kernel can be found in 'sum' boost test case (globalQueueTest.cu).
 
+use case:
+ * init queue with 2048 elements, all of them equal to 1
+ * set number of iterations to 5
+ * set number of threads to 512
+ * the output obtained from kernel (via given pointer) should be equal to 2048
+
+
 {{{
 __global__ void sum_test(int* output_sum, int iterations)
 {
