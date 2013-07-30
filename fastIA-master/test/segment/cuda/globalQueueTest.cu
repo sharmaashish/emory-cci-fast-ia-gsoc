@@ -10,153 +10,88 @@
 #include <cfloat>
 #include <assert.h>
 
-#include <cuda_runtime_api.h>
+//#include <cuda_runtime_api.h>
 
 #include "global_queue.cuh"
 
 #include "cuda/cuda_errors.h"
 
-// created for gpu testing purposes
-// compilation: nvcc DoNothingKernel.cu -o DoNothingKernel
-
-__global__ void do_nothing_kernel(unsigned char* input, int size,
-                                  int num_of_iters){
-
-    for(int j = 0; j < num_of_iters; ++j){
-        for(int i = 0; i < size; ++i){
-            input[i] = sqrtf(input[i]) + sqrtf(input[size - 1 - i]);
-        }
-    }
-}
-
-
-__global__ void my_listReduceKernel(int* d_Result, int *seeds, unsigned char *image, int ncols, int nrows){
-//    curInQueue[blockIdx.x] = inQueuePtr1[blockIdx.x];
-//    curOutQueue[blockIdx.x] = outQueuePtr2[blockIdx.x];
-
-    int loopIt = 0;
-    int workUnit = -1;
-    int tid = threadIdx.x;
-    __shared__ int localQueue[QUEUE_NUM_THREADS][5];
-
-    do{
-        int x, y;
-
-        localQueue[tid][0] = 0;
-
-        // Try to get some work.
-        workUnit = dequeueElement(&loopIt);
-        y = workUnit/ncols;
-        x = workUnit%ncols;
-
-        unsigned char pval = 0;
-
-        if(workUnit >= 0){
-            pval = seeds[workUnit];
-        }
-
-        int retWork = -1;
-        if(workUnit > 0){
-            retWork = propagate((int*)seeds, image, x, y-1, ncols, pval);
-            if(retWork > 0){
-                localQueue[tid][0]++;
-                localQueue[tid][localQueue[tid][0]] = retWork;
-            }
-        }
-//		queueElement(retWork);
-        if(workUnit > 0){
-            retWork = propagate((int*)seeds, image, x, y+1, ncols, pval);
-            if(retWork > 0){
-                localQueue[tid][0]++;
-                localQueue[tid][localQueue[tid][0]] = retWork;
-            }
-        }
-//		queueElement(retWork);
-
-        if(workUnit > 0){
-            retWork = propagate((int*)seeds, image, x-1, y, ncols, pval);
-            if(retWork > 0){
-                localQueue[tid][0]++;
-                localQueue[tid][localQueue[tid][0]] = retWork;
-            }
-        }
-//		queueElement(retWork);
-
-        if(workUnit > 0){
-            retWork = propagate((int*)seeds, image, x+1, y, ncols, pval);
-            if(retWork > 0){
-                localQueue[tid][0]++;
-                localQueue[tid][localQueue[tid][0]] = retWork;
-            }
-        }
-        queueElement(localQueue[tid]);
-
-    }while(workUnit != -2);
-
-//    d_Result[0]=totalInserts[blockIdx.x];
-}
-
-int my_listComputation(int *h_Data, int dataElements, int *d_seeds, unsigned char *d_image, int ncols, int nrows){
-// seeds contais the maker and it is also the output image
-
-//	uint threadsX = 512;
-    int blockNum = 1;
-    int *d_Result;
-
-    int *d_Data;
-    unsigned int dataSize = dataElements * sizeof(int);
-    cudaMalloc((void **)&d_Data, dataSize  );
-    cudaMemcpy(d_Data, h_Data, dataSize, cudaMemcpyHostToDevice);
-
-    // alloc space to save output elements in the queue
-    int *d_OutVector;
-    cudaMalloc((void **)&d_OutVector, sizeof(int) * dataElements);
-
-//	printf("Init queue data!\n");
-    // init values of the __global__ variables used by the queue
-    initQueue<<<1, 1>>>(d_Data, dataElements, d_OutVector, dataElements);
-
-//	init_sync<<<1, 1>>>();
-
-
-    cudaMalloc((void **)&d_Result, sizeof(int) ) ;
-    cudaMemset((void *)d_Result, 0, sizeof(int));
-
-//	printf("Run computation kernel!\n");
-    my_listReduceKernel<<<blockNum, QUEUE_NUM_THREADS>>>(d_Result, d_seeds, d_image, ncols, nrows);
-
-//	cutilCheckMsg("histogramKernel() execution failed\n");
-    int h_Result;
-    cudaMemcpy(&h_Result, d_Result, sizeof(int), cudaMemcpyDeviceToHost);
-
-    printf("	#queue entries = %d\n",h_Result);
-    cudaFree(d_Data);
-    cudaFree(d_Result);
-    cudaFree(d_OutVector);
-
-    // TODO: free everyone
-    return h_Result;
-}
+#define SUM_TEST_BLOCK_SIZE 512
 
 
 __global__ void dequeue_test(int* device_result)
 {
+	setCurrentQueue(blockIdx.x, blockIdx.x);
+
     int loopIt = 0;
-    int workUnit = dequeueElement(&loopIt);
+	int workUnit = dequeueElement(&loopIt);
 
     device_result[blockIdx.x * blockDim.x + threadIdx.x] = workUnit;
 }
 
-BOOST_AUTO_TEST_CASE(test1)
+__global__ void sum_test(int* output_sum, int iterations)
 {
-    std::cout << "GLOBAL QUEUE TEST" << std::endl;
+	setCurrentQueue(blockIdx.x, blockIdx.x);
 
-    const int queueInitDataSize = 200;
+    int loopIt = 0;
+    int workUnit = -1;
+    int tid = threadIdx.x;
+    
+	__shared__ int localQueue[SUM_TEST_BLOCK_SIZE][2];
+
+	// SHARED MEMORY FOR PARALLEL REDUCTION
+	__shared__ int reduction_buffer[SUM_TEST_BLOCK_SIZE];
+
+    for(int i = 0; i < iterations; ++i)
+	{
+		localQueue[tid][0] = 0;
+
+        // Try to get some work.
+        workUnit = dequeueElement(&loopIt);
+		
+		// PREPARING NEXT DATA PART FROM QUEUE TO REDUCTION
+		reduction_buffer[tid] = (workUnit < 0 ? 0 : workUnit);
+		
+		__syncthreads();
+
+		// SIMPLE REDUCTION
+		for (unsigned int s = blockDim.x/2; s > 0; s >>= 1)
+		{
+			if (tid < s) {
+				reduction_buffer[tid] += reduction_buffer[tid + s];
+			}
+			__syncthreads();
+		}
+
+		// PUTTING SUM TO LOCAL QUEUE
+		if(tid == 0)
+		{
+			localQueue[tid][0] = 1;
+			localQueue[tid][1] = reduction_buffer[0];
+		}
+
+		// PUTTING SUM TO GLOBAL QUEUE
+		if(i != iterations - 1)
+			queueElement(localQueue[tid]);
+	}
+
+	// WRITING FINAL RESULT TO GLOBAL MEMORY
+	if(tid == 0)
+		*output_sum = reduction_buffer[0];
+} 
+
+
+
+BOOST_AUTO_TEST_CASE(initializeAndDeque)
+{
+    std::cout << "GLOBAL QUEUE - INITIALIZE AND DEQUEUE TEST" << std::endl;
+
+    const int queueInitDataSize = 64;
     int host_queueInitData[queueInitDataSize];
 
     for(int i = 0; i < queueInitDataSize; ++i)
     {
-        host_queueInitData[i] = i;
+        host_queueInitData[i] = i*i;
     }
 
     int *device_queueInitData;
@@ -179,20 +114,68 @@ BOOST_AUTO_TEST_CASE(test1)
 
     checkError(cudaMalloc(&device_dequeueVector, queueInitDataSize * sizeof(int)));
 
-    dequeue_test<<<1, 512>>>(device_dequeueVector);
+    dequeue_test<<<1, 64>>>(device_dequeueVector);
 
     lastError();
 
-    int *host_dequeueVector = (int *) malloc(512 * sizeof(int));
+    int *host_dequeueVector = (int *) malloc(queueInitDataSize * sizeof(int));
 
     if(host_dequeueVector == NULL)
         std::cout << "malloc failed!" << std::endl;
+   
+    checkError(cudaMemcpy((void*)host_dequeueVector, (const void*)device_dequeueVector, sizeof(int) * queueInitDataSize, cudaMemcpyDeviceToHost));
 
-    checkError(cudaMemcpy(host_dequeueVector, device_dequeueVector,
-                          512 * sizeof(int), cudaMemcpyDeviceToHost));
-
-    for(int i = 0;i < 512; ++i)
+    for(int i = 0;i < queueInitDataSize; ++i)
     {
         std::cout << "i[" << i << "]: " << host_dequeueVector[i] << std::endl;
     }
+}
+
+BOOST_AUTO_TEST_CASE(sum)
+{
+    std::cout << "GLOBAL QUEUE - PARALLEL SUM TEST" << std::endl;
+
+#ifdef PREFIX_SUM
+	std::cout << "PREFIX SUM ENABLED" << std::endl;
+#endif
+
+    const int queueInitDataSize = 14096;
+	const int numberOfIterations = 100;
+
+    int host_queueInitData[queueInitDataSize];
+
+    for(int i = 0; i < queueInitDataSize; ++i)
+    {
+        host_queueInitData[i] = 1;
+    }
+
+    int *device_queueInitData;
+    unsigned int initDataSizeByte = queueInitDataSize * sizeof(int);
+
+    checkError(cudaMalloc(&device_queueInitData, initDataSizeByte));
+    checkError(cudaMemcpy(device_queueInitData, host_queueInitData,
+               initDataSizeByte, cudaMemcpyHostToDevice));
+
+    int *device_outVector;
+    checkError(cudaMalloc(&device_outVector, queueInitDataSize * sizeof(int)));
+
+
+    initQueue<<<1, 1>>>(device_queueInitData, queueInitDataSize,
+                        device_outVector, queueInitDataSize);
+
+    lastError();
+
+    int *device_outputSum;
+
+    checkError(cudaMalloc(&device_outputSum, sizeof(int)));
+
+    sum_test<<<1, SUM_TEST_BLOCK_SIZE>>>(device_outputSum, numberOfIterations);
+
+    lastError();
+
+    int host_outputSum;
+
+    checkError(cudaMemcpy((void*)(&host_outputSum), (const void*)device_outputSum, sizeof(int), cudaMemcpyDeviceToHost));
+
+	std::cout << "output sum: " << host_outputSum << std::endl;
 }
