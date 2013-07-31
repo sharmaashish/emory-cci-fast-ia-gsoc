@@ -273,6 +273,11 @@ BOOST_AUTO_TEST_CASE(morphReconstruction)
 
     std::cout << "data_elements: " << data_elements << std::endl;
 
+    for(int i = 0; i < data_elements; ++i){
+        std::cout << "input_list[" << i << "]: " << host_input_list[i]
+                     << "(" << host_seeds[host_input_list[i]] << ")" << std::endl;
+    }
+
     int *device_input_list;
     cudaMalloc((void **)&device_input_list, sizeof(host_input_list)) ;
     checkError(cudaMemcpy(device_input_list, host_input_list,
