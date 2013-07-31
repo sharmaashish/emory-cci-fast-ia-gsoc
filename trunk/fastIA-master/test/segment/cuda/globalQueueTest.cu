@@ -29,6 +29,50 @@ __global__ void dequeue_test(int* device_result)
     device_result[blockIdx.x * blockDim.x + threadIdx.x] = workUnit;
 }
 
+/* output sum should have lenght equal to iterations,
+ * iteration shouldn't be greater than num of threads in block
+ */
+__global__ void partial_sum_test(int* output_sum, int iterations)
+{
+    setCurrentQueue(blockIdx.x, blockIdx.x);
+
+    int loopIt = 0;
+    int workUnit = -1;
+    int tid = threadIdx.x;
+
+    // SHARED MEMORY FOR PARALLEL REDUCTION
+    __shared__ int reduction_buffer[SUM_TEST_BLOCK_SIZE];
+
+    int partial_sum;
+
+    for(int i = 0; i < iterations; ++i)
+    {
+        // Try to get some work.
+        workUnit = dequeueElement(&loopIt);
+
+        // PREPARING NEXT DATA PART FROM QUEUE TO REDUCTION
+        reduction_buffer[tid] = (workUnit < 0 ? 0 : workUnit);
+
+        __syncthreads();
+
+        // SIMPLE REDUCTION
+        for (unsigned int s = blockDim.x/2; s > 0; s >>= 1)
+        {
+            if (tid < s) {
+                reduction_buffer[tid] += reduction_buffer[tid + s];
+            }
+            __syncthreads();
+        }
+
+        if(tid == i)
+            partial_sum = reduction_buffer[0];
+    }
+
+    // WRITING FINAL RESULT TO GLOBAL MEMORY
+    if(tid < iterations)
+        output_sum[tid] = partial_sum;
+}
+
 __global__ void sum_test(int* output_sum, int iterations)
 {
 	setCurrentQueue(blockIdx.x, blockIdx.x);
@@ -118,7 +162,7 @@ BOOST_AUTO_TEST_CASE(initializeAndDeque)
 
     lastError();
 
-    int *host_dequeueVector = (int *) malloc(queueInitDataSize * sizeof(int));
+    int *host_dequeueVector = new int[queueInitDataSize];
 
     if(host_dequeueVector == NULL)
         std::cout << "malloc failed!" << std::endl;
@@ -129,6 +173,73 @@ BOOST_AUTO_TEST_CASE(initializeAndDeque)
     {
         std::cout << "i[" << i << "]: " << host_dequeueVector[i] << std::endl;
     }
+
+    checkError(cudaFree(device_queueInitData));
+    checkError(cudaFree(device_outVector));
+    checkError(cudaFree(device_dequeueVector));
+
+    delete[] host_dequeueVector;
+}
+
+BOOST_AUTO_TEST_CASE(partialSum)
+{
+    std::cout << "GLOBAL QUEUE - PARALLEL PARTIAL SUM TEST" << std::endl;
+
+#ifdef PREFIX_SUM
+    std::cout << "PREFIX SUM ENABLED" << std::endl;
+#endif
+
+    const int queueInitDataSize = 14096;
+    const int numberOfIterations = 100;
+
+    int host_queueInitData[queueInitDataSize];
+
+    for(int i = 0; i < queueInitDataSize; ++i)
+    {
+        host_queueInitData[i] = 1;
+    }
+
+    int *device_queueInitData;
+    unsigned int initDataSizeByte = queueInitDataSize * sizeof(int);
+
+    checkError(cudaMalloc(&device_queueInitData, initDataSizeByte));
+    checkError(cudaMemcpy(device_queueInitData, host_queueInitData,
+               initDataSizeByte, cudaMemcpyHostToDevice));
+
+    int *device_outVector;
+    checkError(cudaMalloc(&device_outVector, queueInitDataSize * sizeof(int)));
+
+
+    initQueue<<<1, 1>>>(device_queueInitData, queueInitDataSize,
+                        device_outVector, queueInitDataSize);
+
+    lastError();
+
+    int *device_outputSum;
+
+    checkError(cudaMalloc(&device_outputSum, numberOfIterations * sizeof(int)));
+
+    partial_sum_test<<<1, SUM_TEST_BLOCK_SIZE>>>(device_outputSum, numberOfIterations);
+
+    lastError();
+
+    int* host_outputSum = new int[numberOfIterations];
+
+    checkError(cudaMemcpy((void*)(&host_outputSum), (const void*)device_outputSum,
+                          numberOfIterations * sizeof(int), cudaMemcpyDeviceToHost));
+
+    std::cout << "output partial sums: " << std::endl;
+
+    for(int i = 0; i < numberOfIterations; ++i)
+    {
+        std::cout << "outputSum[" << i << "]: " << host_outputSum[i] << std::endl;
+    }
+
+    checkError(cudaFree(device_queueInitData));
+    checkError(cudaFree(device_outVector));
+    checkError(cudaFree(device_outputSum));
+
+    delete[] host_outputSum;
 }
 
 BOOST_AUTO_TEST_CASE(sum)
@@ -179,6 +290,10 @@ BOOST_AUTO_TEST_CASE(sum)
                           (const void*)device_outputSum,sizeof(int), cudaMemcpyDeviceToHost));
 
 	std::cout << "output sum: " << host_outputSum << std::endl;
+
+    checkError(cudaFree(device_queueInitData));
+    checkError(cudaFree(device_outVector));
+    checkError(cudaFree(device_outputSum));
 }
 
 BOOST_AUTO_TEST_CASE(morphReconstruction)
