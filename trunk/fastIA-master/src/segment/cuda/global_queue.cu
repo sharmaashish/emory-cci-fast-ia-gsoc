@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "global_queue.cuh"
+#include "cuda/cuda_errors.h"
 
 __device__ volatile int inQueueSize[QUEUE_MAX_NUM_BLOCKS];
 __device__ volatile int *inQueuePtr1[QUEUE_MAX_NUM_BLOCKS];
@@ -1056,12 +1057,12 @@ extern "C" int morphRecon(int *d_input_list, int dataElements, int *d_seeds, uns
 	printf("Error after morphRecon = %s\n", error);
 
 	int h_Result;
-	cudaMemcpy(&h_Result, d_Result, sizeof(int), cudaMemcpyDeviceToHost);
-    cudaDeviceSynchronize();
+    checkError(cudaMemcpy(&h_Result, d_Result, sizeof(int), cudaMemcpyDeviceToHost));
+    checkError(cudaDeviceSynchronize());
 
 	printf("	#queue entries = %d\n",h_Result);
-	cudaFree(d_Result);
-	cudaFree(d_OutVector);
+    checkError(cudaFree(d_Result));
+    checkError(cudaFree(d_OutVector));
 
 	// TODO: free everyone
 	return h_Result;
