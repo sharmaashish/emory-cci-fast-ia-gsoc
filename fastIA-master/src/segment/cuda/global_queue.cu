@@ -1056,6 +1056,7 @@ extern "C" int morphRecon(int *d_input_list, int dataElements, int *d_seeds, uns
 	const char *error = cudaGetErrorString(errorCode);
 	printf("Error after morphRecon = %s\n", error);
 
+#ifdef GET_TOTAL_INSERTS
 	int h_Result;
     checkError(cudaMemcpy(&h_Result, d_Result, sizeof(int), cudaMemcpyDeviceToHost));
     checkError(cudaDeviceSynchronize());
@@ -1066,4 +1067,7 @@ extern "C" int morphRecon(int *d_input_list, int dataElements, int *d_seeds, uns
 
 	// TODO: free everyone
 	return h_Result;
+#else
+    return 0;
+#endif
 }
