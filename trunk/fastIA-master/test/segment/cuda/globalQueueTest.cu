@@ -257,6 +257,9 @@ BOOST_AUTO_TEST_CASE(morphReconstruction)
     int host_image_size = sizeof(host_image) / sizeof(host_image[0]);
     int host_seeds_size = sizeof(host_seeds) / sizeof(host_seeds[0]);
 
+    (void)host_image_size; //unused, to avoid warnings
+    (void)host_seeds_size; //unused, to avoid warnings
+
     int ncols = 32;
     int nrows = 32;
 
@@ -265,9 +268,10 @@ BOOST_AUTO_TEST_CASE(morphReconstruction)
     assert(host_image_size == host_seeds_size);
     assert(total_size == host_image_size);
 
-    const int host_input_list[] = {8*32+8, 4*32};
+    const int host_input_list[] = {8*32+8, 4*32+24};
     int data_elements = sizeof(host_input_list) / sizeof(host_input_list[0]);
 
+    std::cout << "data_elements: " << data_elements << std::endl;
 
     int *device_input_list;
     cudaMalloc((void **)&device_input_list, sizeof(host_input_list)) ;
