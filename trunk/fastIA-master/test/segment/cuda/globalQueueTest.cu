@@ -257,6 +257,8 @@ BOOST_AUTO_TEST_CASE(morphReconstruction)
     const int host_input_list[] = {8*32+8};
     int data_elements = 1;
 
+    std::cout << "seed value: " << host_seeds[host_input_list[0]] << std::endl;
+
     int *device_input_list;
     cudaMalloc((void **)&device_input_list, sizeof(int) ) ;
     cudaMemset((void *)device_input_list, host_input_list[0], sizeof(int));
