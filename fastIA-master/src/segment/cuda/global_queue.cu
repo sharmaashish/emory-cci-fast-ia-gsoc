@@ -457,47 +457,6 @@ __global__ void listReduceKernel(int* d_Result, int *seeds, unsigned char *image
 	d_Result[0]=totalInserts[blockIdx.x];
 }
 
-extern "C" int listComputation(int *h_Data, int dataElements, int *d_seeds, unsigned char *d_image, int ncols, int nrows){
-// seeds contais the maker and it is also the output image
-
-//	uint threadsX = 512;
-	int blockNum = 1;
-	int *d_Result;
-
-	int *d_Data;
-	unsigned int dataSize = dataElements * sizeof(int);
-	cudaMalloc((void **)&d_Data, dataSize  );
-	cudaMemcpy(d_Data, h_Data, dataSize, cudaMemcpyHostToDevice);
-
-	// alloc space to save output elements in the queue
-	int *d_OutVector;
-	cudaMalloc((void **)&d_OutVector, sizeof(int) * dataElements);
-	
-//	printf("Init queue data!\n");
-	// init values of the __global__ variables used by the queue
-	initQueue<<<1, 1>>>(d_Data, dataElements, d_OutVector, dataElements);
-
-//	init_sync<<<1, 1>>>();
-	
-
-	cudaMalloc((void **)&d_Result, sizeof(int) ) ;
-	cudaMemset((void *)d_Result, 0, sizeof(int));
-
-//	printf("Run computation kernel!\n");
-    listReduceKernel<<<blockNum, QUEUE_NUM_THREADS>>>(d_Result, d_seeds, d_image, ncols, nrows);
-
-//	cutilCheckMsg("histogramKernel() execution failed\n");
-	int h_Result;
-	cudaMemcpy(&h_Result, d_Result, sizeof(int), cudaMemcpyDeviceToHost);
-
-	printf("	#queue entries = %d\n",h_Result);
-	cudaFree(d_Data);
-	cudaFree(d_Result);
-	cudaFree(d_OutVector);
-
-	// TODO: free everyone
-	return h_Result;
-}
 
 __global__ void morphReconKernel(int* d_Result, int *seeds, unsigned char *image, int ncols, int nrows){
 	curInQueue[blockIdx.x] = inQueuePtr1[blockIdx.x];
@@ -756,73 +715,6 @@ __global__ void morphReconKernelVector(int* d_Result, int **d_SeedsList, unsigne
 ///}
 
 
-extern "C" int morphReconVector(int nImages, int **h_InputListPtr, int* h_ListSize, int **h_Seeds, unsigned char **h_Images, int* h_ncols, int* h_nrows, int connectivity){
-// seeds contais the maker and it is also the output image
-	int blockNum = nImages;
-	int *d_Result;
-
-	// alloc space to save output elements in the queue
-	int **h_OutQueuePtr = (int **)malloc(sizeof(int*) * nImages);;
-
-	for(int i = 0; i < nImages;i++){
-		cudaMalloc((void **)&h_OutQueuePtr[i], sizeof(int) * (h_ListSize[i]+1000) * 2);
-	}
-	
-	// Init queue for each images. yes, this may not be the most efficient way, but the code is far easier to read. 
-	// Another version, where all pointer are copied at once to the GPU was also built, buit it was only about 1ms 
-	// faster. Thus, we decide to go with this version 
-	for(int i = 0; i < nImages;i++)
-		initQueueId<<<1, 1>>>(h_InputListPtr[i], h_ListSize[i], h_OutQueuePtr[i], (h_ListSize[i]+1000) *2, i);
-	
-	cudaMalloc((void **)&d_Result, sizeof(int)*nImages) ;
-	cudaMemset((void *)d_Result, 0, sizeof(int)*nImages);
-
-	int **d_Seeds = NULL;
-	cudaMalloc((void **)&d_Seeds, sizeof(int*) * nImages);
-	cudaMemcpy(d_Seeds, h_Seeds, sizeof(int*) * nImages, cudaMemcpyHostToDevice);
-
-	unsigned char **d_Images = NULL;
-	cudaMalloc((void **)&d_Images, sizeof(unsigned char*) * nImages);
-	cudaMemcpy(d_Images, h_Images, sizeof(unsigned char*) * nImages, cudaMemcpyHostToDevice);
-
-	int *d_ncols = NULL;
-	cudaMalloc((void **)&d_ncols, sizeof(int) * nImages);
-	cudaMemcpy(d_ncols, h_ncols, sizeof(int) * nImages, cudaMemcpyHostToDevice);
-
-	int *d_nrows = NULL;
-	cudaMalloc((void **)&d_nrows, sizeof(int) * nImages);
-	cudaMemcpy(d_nrows, h_nrows, sizeof(int) * nImages, cudaMemcpyHostToDevice);
-
-//	printf("Run computation kernel!\n");
-    morphReconKernelVector<<<blockNum, QUEUE_NUM_THREADS>>>(d_Result, d_Seeds, d_Images, d_ncols, d_nrows, connectivity);
-
-	if(cudaGetLastError() != cudaSuccess){
-		cudaError_t errorCode = cudaGetLastError();
-		const char *error = cudaGetErrorString(errorCode);
-		printf("Error after morphRecon = %s\n", error);
-	}
-
-	int *h_Result = (int *) malloc(sizeof(int) * blockNum);
-	cudaMemcpy(h_Result, d_Result, sizeof(int) * blockNum, cudaMemcpyDeviceToHost);
-
-	int resutRet = h_Result[0];
-//	printf("	#queue entries = %d\n",h_Result[0]);
-	free(h_Result);
-
-	cudaFree(d_nrows);
-	cudaFree(d_ncols);
-	cudaFree(d_Images);
-	cudaFree(d_Seeds);
-	cudaFree(d_Result);
-	for(int i = 0; i < nImages; i++){
-		cudaFree(h_OutQueuePtr[i]);
-		cudaFree(h_InputListPtr[i]);
-	}
-	free(h_OutQueuePtr);
-
-	return resutRet;
-}
-
 __global__ void morphReconKernelSpeedup(int* d_Result, int *d_Seeds, unsigned char *d_Image, int ncols, int nrows, int connectivity=4){
 	curInQueue[blockIdx.x] = inQueuePtr1[blockIdx.x];
 	curOutQueue[blockIdx.x] = outQueuePtr2[blockIdx.x];
@@ -934,10 +826,118 @@ __global__ void morphReconKernelSpeedup(int* d_Result, int *d_Seeds, unsigned ch
 	if(execution_code!=0){
 		d_Result[gridDim.x]=1;
 	}
-
 }
 
 
+extern "C" int listComputation(int *h_Data, int dataElements, int *d_seeds, unsigned char *d_image, int ncols, int nrows){
+// seeds contais the maker and it is also the output image
+
+//	uint threadsX = 512;
+    int blockNum = 1;
+    int *d_Result;
+
+    int *d_Data;
+    unsigned int dataSize = dataElements * sizeof(int);
+    cudaMalloc((void **)&d_Data, dataSize  );
+    cudaMemcpy(d_Data, h_Data, dataSize, cudaMemcpyHostToDevice);
+
+    // alloc space to save output elements in the queue
+    int *d_OutVector;
+    cudaMalloc((void **)&d_OutVector, sizeof(int) * dataElements);
+
+//	printf("Init queue data!\n");
+    // init values of the __global__ variables used by the queue
+    initQueue<<<1, 1>>>(d_Data, dataElements, d_OutVector, dataElements);
+
+//	init_sync<<<1, 1>>>();
+
+
+    cudaMalloc((void **)&d_Result, sizeof(int) ) ;
+    cudaMemset((void *)d_Result, 0, sizeof(int));
+
+//	printf("Run computation kernel!\n");
+    listReduceKernel<<<blockNum, QUEUE_NUM_THREADS>>>(d_Result, d_seeds, d_image, ncols, nrows);
+
+//	cutilCheckMsg("histogramKernel() execution failed\n");
+    int h_Result;
+    cudaMemcpy(&h_Result, d_Result, sizeof(int), cudaMemcpyDeviceToHost);
+
+    printf("	#queue entries = %d\n",h_Result);
+    cudaFree(d_Data);
+    cudaFree(d_Result);
+    cudaFree(d_OutVector);
+
+    // TODO: free everyone
+    return h_Result;
+}
+
+
+extern "C" int morphReconVector(int nImages, int **h_InputListPtr, int* h_ListSize, int **h_Seeds, unsigned char **h_Images, int* h_ncols, int* h_nrows, int connectivity){
+// seeds contais the maker and it is also the output image
+    int blockNum = nImages;
+    int *d_Result;
+
+    // alloc space to save output elements in the queue
+    int **h_OutQueuePtr = (int **)malloc(sizeof(int*) * nImages);;
+
+    for(int i = 0; i < nImages;i++){
+        cudaMalloc((void **)&h_OutQueuePtr[i], sizeof(int) * (h_ListSize[i]+1000) * 2);
+    }
+
+    // Init queue for each images. yes, this may not be the most efficient way, but the code is far easier to read.
+    // Another version, where all pointer are copied at once to the GPU was also built, buit it was only about 1ms
+    // faster. Thus, we decide to go with this version
+    for(int i = 0; i < nImages;i++)
+        initQueueId<<<1, 1>>>(h_InputListPtr[i], h_ListSize[i], h_OutQueuePtr[i], (h_ListSize[i]+1000) *2, i);
+
+    cudaMalloc((void **)&d_Result, sizeof(int)*nImages) ;
+    cudaMemset((void *)d_Result, 0, sizeof(int)*nImages);
+
+    int **d_Seeds = NULL;
+    cudaMalloc((void **)&d_Seeds, sizeof(int*) * nImages);
+    cudaMemcpy(d_Seeds, h_Seeds, sizeof(int*) * nImages, cudaMemcpyHostToDevice);
+
+    unsigned char **d_Images = NULL;
+    cudaMalloc((void **)&d_Images, sizeof(unsigned char*) * nImages);
+    cudaMemcpy(d_Images, h_Images, sizeof(unsigned char*) * nImages, cudaMemcpyHostToDevice);
+
+    int *d_ncols = NULL;
+    cudaMalloc((void **)&d_ncols, sizeof(int) * nImages);
+    cudaMemcpy(d_ncols, h_ncols, sizeof(int) * nImages, cudaMemcpyHostToDevice);
+
+    int *d_nrows = NULL;
+    cudaMalloc((void **)&d_nrows, sizeof(int) * nImages);
+    cudaMemcpy(d_nrows, h_nrows, sizeof(int) * nImages, cudaMemcpyHostToDevice);
+
+//	printf("Run computation kernel!\n");
+    morphReconKernelVector<<<blockNum, QUEUE_NUM_THREADS>>>(d_Result, d_Seeds, d_Images, d_ncols, d_nrows, connectivity);
+
+    if(cudaGetLastError() != cudaSuccess){
+        cudaError_t errorCode = cudaGetLastError();
+        const char *error = cudaGetErrorString(errorCode);
+        printf("Error after morphRecon = %s\n", error);
+    }
+
+    int *h_Result = (int *) malloc(sizeof(int) * blockNum);
+    cudaMemcpy(h_Result, d_Result, sizeof(int) * blockNum, cudaMemcpyDeviceToHost);
+
+    int resutRet = h_Result[0];
+//	printf("	#queue entries = %d\n",h_Result[0]);
+    free(h_Result);
+
+    cudaFree(d_nrows);
+    cudaFree(d_ncols);
+    cudaFree(d_Images);
+    cudaFree(d_Seeds);
+    cudaFree(d_Result);
+    for(int i = 0; i < nImages; i++){
+        cudaFree(h_OutQueuePtr[i]);
+        cudaFree(h_InputListPtr[i]);
+    }
+    free(h_OutQueuePtr);
+
+    return resutRet;
+}
 
 extern "C" int morphReconSpeedup( int *g_InputListPtr, int h_ListSize, int *g_Seed, unsigned char *g_Image, int h_ncols, int h_nrows, int connectivity, int nBlocks, float queue_increase_factor){
 // seeds contais the maker and it is also the output image
@@ -1057,7 +1057,7 @@ extern "C" int morphRecon(int *d_input_list, int dataElements, int *d_seeds, uns
 
 	int h_Result;
 	cudaMemcpy(&h_Result, d_Result, sizeof(int), cudaMemcpyDeviceToHost);
-cudaDeviceSynchronize();
+    cudaDeviceSynchronize();
 
 	printf("	#queue entries = %d\n",h_Result);
 	cudaFree(d_Result);
