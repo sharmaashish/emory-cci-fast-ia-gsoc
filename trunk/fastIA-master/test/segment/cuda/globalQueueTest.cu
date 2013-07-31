@@ -261,7 +261,9 @@ BOOST_AUTO_TEST_CASE(morphReconstruction)
 
     int *device_input_list;
     cudaMalloc((void **)&device_input_list, sizeof(int) ) ;
-    cudaMemset((void *)device_input_list, host_input_list[0], sizeof(int));
+    //cudaMemset((void *)device_input_list, host_input_list[0], sizeof(int));
+    checkError(cudaMemcpy(device_input_list, host_input_list,
+                          sizeof(int), cudaMemcpyHostToDevice));
 
     int ncols = 32;
     int nrows = 32;
