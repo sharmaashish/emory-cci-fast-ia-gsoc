@@ -284,6 +284,8 @@ BOOST_AUTO_TEST_CASE(morphReconstruction)
     checkError(cudaMemcpy(host_seeds, device_seeds,
                total_size * sizeof(int), cudaMemcpyDeviceToHost));
 
+    std::cout << "printing output..." << std::endl;
+
     for(int i = 0; i < 32; ++i)
     {
         for(int j = 0; j < 32; ++j)
