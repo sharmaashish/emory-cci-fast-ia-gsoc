@@ -218,7 +218,7 @@ BOOST_AUTO_TEST_CASE(morphReconstruction)
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
  /*32*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-    const int host_seeds[] = { /* single '1' on 9x9 */
+    int host_seeds[] = { /* single '1' on 9x9 */
 //               4           8           12          16          20          24          28          32
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -280,5 +280,21 @@ BOOST_AUTO_TEST_CASE(morphReconstruction)
                total_size * sizeof(int), cudaMemcpyHostToDevice));
 
     morphRecon(device_input_list, data_elements, device_seeds, device_image, ncols, nrows);
+
+    checkError(cudaMemcpy(host_seeds, device_seeds,
+               total_size * sizeof(int), cudaMemcpyDeviceToHost));
+
+    for(int i = 0; i < 32; ++i)
+    {
+        for(int j = 0; j < 32; ++j)
+        {
+            std::cout << host_seeds[i*32 + j];
+        }
+        std::cout << std::endl;
+    }
+
+    checkError(cudaFree(device_input_list));
+    checkError(cudaFree(device_image));
+    checkError(cudaFree(device_seeds));
 
 }
