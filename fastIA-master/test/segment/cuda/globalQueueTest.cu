@@ -5,10 +5,10 @@
 #include "TestUtils.h"
 
 #include <iostream>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include <cfloat>
-#include <assert.h>
+#include <cassert>
 
 //#include <cuda_runtime_api.h>
 
@@ -254,21 +254,25 @@ BOOST_AUTO_TEST_CASE(morphReconstruction)
  /*32*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 
-    const int host_input_list[] = {8*32+8};
-    int data_elements = 1;
-
-    std::cout << "seed value: " << host_seeds[host_input_list[0]] << std::endl;
-
-    int *device_input_list;
-    cudaMalloc((void **)&device_input_list, sizeof(int) ) ;
-    //cudaMemset((void *)device_input_list, host_input_list[0], sizeof(int));
-    checkError(cudaMemcpy(device_input_list, host_input_list,
-                          sizeof(int), cudaMemcpyHostToDevice));
+    int host_image_size = sizeof(host_image) / sizeof(host_image[0]);
+    int host_seeds_size = sizeof(host_seeds) / sizeof(host_seeds[0]);
 
     int ncols = 32;
     int nrows = 32;
 
     int total_size = ncols * nrows;
+
+    assert(host_image_size == host_seeds_size);
+    assert(total_size == host_image_size);
+
+    const int host_input_list[] = {8*32+8, 4*32};
+    int data_elements = sizeof(host_input_list) / sizeof(host_input_list[0]);
+
+
+    int *device_input_list;
+    cudaMalloc((void **)&device_input_list, sizeof(host_input_list)) ;
+    checkError(cudaMemcpy(device_input_list, host_input_list,
+                          sizeof(host_input_list), cudaMemcpyHostToDevice));
 
     unsigned char* device_image;
     int* device_seeds;
