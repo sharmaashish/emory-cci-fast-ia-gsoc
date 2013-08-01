@@ -349,7 +349,7 @@ BOOST_AUTO_TEST_CASE(partialSumMultipleBlocks)
     int host_outputSum[numberOfIterations * numberOfBlocks];
 
     checkError(cudaMemcpy((void*)(host_outputSum), (void*)device_outputSum,
-                numberOfIterations * sizeof(int), cudaMemcpyDeviceToHost));
+                numberOfIterations * numberOfBlocks * sizeof(int), cudaMemcpyDeviceToHost));
 
 
     int verificationData[numberOfIterations * numberOfBlocks];
