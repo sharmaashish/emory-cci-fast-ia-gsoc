@@ -332,9 +332,9 @@ BOOST_AUTO_TEST_CASE(partialSumMultipleBlocks)
     //initQueue<<<1, 1>>>(device_queueInitData, queueInitDataSize,
     //                    device_outVector, queueInitDataSize);
 
-    initQueueVector<<<numberOfBlocks, numberOfBlocks>>>(device_queueInitInPointers, device_queueSizes,
-                                                        device_queueInitOutPointers, device_queueSizes,
-                                                        numberOfBlocks);
+    initQueueVector<<<1, numberOfBlocks>>>(device_queueInitInPointers, device_queueSizes,
+                                           device_queueInitOutPointers, device_queueSizes,
+                                           numberOfBlocks);
 
     lastError();
 
@@ -342,7 +342,7 @@ BOOST_AUTO_TEST_CASE(partialSumMultipleBlocks)
 
     checkError(cudaMalloc(&device_outputSum, numberOfIterations * numberOfBlocks * sizeof(int)));
 
-    partial_sum_test<<<1, SUM_TEST_BLOCK_SIZE>>>(device_outputSum, numberOfIterations);
+    partial_sum_test<<<numberOfBlocks, SUM_TEST_BLOCK_SIZE>>>(device_outputSum, numberOfIterations);
 
     lastError();
 
