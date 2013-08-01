@@ -238,12 +238,12 @@ BOOST_AUTO_TEST_CASE(partialSum)
     {
         int sum = 0;
 
-        for(int k = 0; k < SUM_TEST_BLOCK_SIZE; ++k){
-
+        for(int k = 0; k < SUM_TEST_BLOCK_SIZE; ++k)
+        {
             if(j < queueInitDataSize)
+                sum += host_queueInitData[j++];
+            else
                 break;
-
-            sum += host_queueInitData[j++];
         }
 
         verificationData[i] = sum;
