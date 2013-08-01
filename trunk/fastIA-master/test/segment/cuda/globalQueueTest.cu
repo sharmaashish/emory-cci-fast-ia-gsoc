@@ -71,7 +71,7 @@ __global__ void partial_sum_test(int* output_sum, int iterations)
 
     // WRITING FINAL RESULT TO GLOBAL MEMORY
     if(tid < iterations)
-        output_sum[tid] = partial_sum;
+        output_sum[blockIdx.x * iterations + tid] = partial_sum;
 }
 
 __global__ void sum_test(int* output_sum, int iterations)
@@ -262,6 +262,129 @@ BOOST_AUTO_TEST_CASE(partialSum)
 
     checkError(cudaFree(device_queueInitData));
     checkError(cudaFree(device_outVector));
+    checkError(cudaFree(device_outputSum));
+}
+
+BOOST_AUTO_TEST_CASE(partialSumMultipleBlocks)
+{
+    std::cout << "GLOBAL QUEUE - PARALLEL PARTIAL SUM MULTIPLE BLOCKS TEST"
+              << std::endl;
+
+#ifdef PREFIX_SUM
+    std::cout << "PREFIX SUM ENABLED" << std::endl;
+#endif
+
+    const int queueInitDataSize = 1024 * 128; // 512KB
+    const int numberOfIterations = 5;
+    const int numberOfBlocks = 64;
+    const int itemsPerBlock = queueInitDataSize / numberOfBlocks;
+
+    int host_queueInitData[queueInitDataSize];
+
+    /*random values from range <0;9> */
+
+    for(int i = 0; i < queueInitDataSize; ++i)
+    {
+        host_queueInitData[i] = rand() % 10;
+    }
+
+    int *device_queueInitData;
+    unsigned int initDataSizeByte = queueInitDataSize * sizeof(int);
+
+    checkError(cudaMalloc(&device_queueInitData, initDataSizeByte));
+    checkError(cudaMemcpy(device_queueInitData, host_queueInitData,
+               initDataSizeByte, cudaMemcpyHostToDevice));
+
+    int *device_outVector;
+    checkError(cudaMalloc(&device_outVector, queueInitDataSize * sizeof(int)));
+
+    int* host_queueInitInPointers[numberOfBlocks];
+    int* host_queueInitOutPointers[numberOfBlocks];
+
+    int host_queueSizes[numberOfBlocks];
+
+    for(int i = 0; i < numberOfBlocks; ++i)
+    {
+        host_queueInitInPointers[i] = device_queueInitData + i * itemsPerBlock;
+        host_queueInitOutPointers[i] = device_outVector + i * itemsPerBlock;
+
+        host_queueSizes[i] = itemsPerBlock;
+    }
+
+    int** device_queueInitInPointers;
+    int** device_queueInitOutPointers;
+
+    checkError(cudaMalloc(&device_queueInitInPointers, numberOfBlocks * sizeof(int*)));
+    checkError(cudaMemcpy(device_queueInitInPointers, host_queueInitInPointers,
+               numberOfBlocks * sizeof(int*), cudaMemcpyHostToDevice));
+
+    checkError(cudaMalloc(&device_queueInitOutPointers, numberOfBlocks * sizeof(int*)));
+    checkError(cudaMemcpy(device_queueInitOutPointers, host_queueInitOutPointers,
+               numberOfBlocks * sizeof(int*), cudaMemcpyHostToDevice));
+
+    //out sizes (the same for in/out)
+    int *device_queueSizes;
+    checkError(cudaMalloc(&device_queueSizes, numberOfBlocks * sizeof(int)));
+    checkError(cudaMemcpy(device_queueSizes, host_queueSizes,
+               numberOfBlocks * sizeof(int), cudaMemcpyHostToDevice));
+
+
+    //initQueue<<<1, 1>>>(device_queueInitData, queueInitDataSize,
+    //                    device_outVector, queueInitDataSize);
+
+    initQueueVector<<<1, numberOfBlocks>>>(device_queueInitInPointers, device_queueSizes,
+                                           device_queueInitOutPointers, device_queueSizes,
+                                           numberOfBlocks);
+
+    lastError();
+
+    int *device_outputSum;
+
+    checkError(cudaMalloc(&device_outputSum, numberOfIterations * numberOfBlocks * sizeof(int)));
+
+    partial_sum_test<<<1, SUM_TEST_BLOCK_SIZE>>>(device_outputSum, numberOfIterations);
+
+    lastError();
+
+    int host_outputSum[numberOfIterations * numberOfBlocks];
+
+    checkError(cudaMemcpy((void*)(host_outputSum), (void*)device_outputSum,
+                numberOfIterations * sizeof(int), cudaMemcpyDeviceToHost));
+
+
+    int verificationData[numberOfIterations * numberOfBlocks];
+
+    for(int i = 0, j = 0; i < numberOfIterations * numberOfBlocks; ++i)
+    {
+        int sum = 0;
+
+        for(int k = 0; k < SUM_TEST_BLOCK_SIZE; ++k)
+        {
+            if(j < queueInitDataSize)
+                sum += host_queueInitData[j++];
+            else
+                break;
+        }
+
+        verificationData[i] = sum;
+    }
+
+
+    std::cout << "output partial sums: " << std::endl;
+
+    for(int i = 0; i < numberOfIterations * numberOfBlocks; ++i)
+    {
+        std::cout << "outputSum[" << i << "]: " << host_outputSum[i]
+                     << ", cpu: " << verificationData[i]
+                        << (host_outputSum[i] == verificationData[i] ? ", OK" : ", FAIL")
+                        << std::endl;
+    }
+
+    checkError(cudaFree(device_queueInitData));
+    checkError(cudaFree(device_outVector));
+    checkError(cudaFree(device_queueInitInPointers));
+    checkError(cudaFree(device_queueInitOutPointers));
+    checkError(cudaFree(device_queueSizes));
     checkError(cudaFree(device_outputSum));
 }
 

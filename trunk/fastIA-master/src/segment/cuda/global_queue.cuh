@@ -29,6 +29,10 @@ __global__ void initQueue(int *inQueueData, int dataElements,
 __global__ void initQueueId(int *inQueueData, int dataElements,
                             int *outQueueData, int outMaxSize, int qId);
 
+// added by M. Cieslak
+__global__ void initQueueVector(int **inQueueData, int *inQueueSizes,
+                                int **outQueueData, int *outQueueSizes, int numImages);
+
 __global__ void initQueueVector(int **inQueueData, int *inQueueSizes,
                                 int **outQueueData, int numImages);
 

@@ -349,6 +349,32 @@ __global__ void initQueueId(int *inQueueData, int dataElements, int *outQueueDat
 	}
 }
 
+// added by M. Cieslak
+__global__ void initQueueVector(int **inQueueData, int *inQueueSizes,
+                                int **outQueueData, int *outQueueSizes, int numImages){
+    if(threadIdx.x < QUEUE_MAX_NUM_BLOCKS && threadIdx.x < numImages){
+//		printf("initQueueVector: tid - %d inQueueSize[%d] = %d pointer = %p outPtr = %p\n", threadIdx.x, threadIdx.x, inQueueSizes[threadIdx.x], inQueueData[threadIdx.x], outQueueData[threadIdx.x]);
+
+        // Simply assign input data pointers/number of elements to the queue
+        inQueuePtr1[threadIdx.x] = inQueueData[threadIdx.x];
+        inQueueSize[threadIdx.x] = inQueueSizes[threadIdx.x];
+        totalInserts[threadIdx.x] = 0;
+
+        // alloc second vector used to queue output elements
+        outQueuePtr2[threadIdx.x] = outQueueData[threadIdx.x];
+
+        // Maximum number of elements that fit into the queue
+        outQueueMaxSize[threadIdx.x] = outQueueSizes[threadIdx.x];
+
+        // Head of the out queue
+        outQueueHead[threadIdx.x] = 0;
+
+        // Head of the in queue
+        inQueueHead[threadIdx.x] = 0;
+
+    }
+}
+
 
 __global__ void initQueueVector(int **inQueueData, int *inQueueSizes, int **outQueueData, int numImages){
     if(threadIdx.x < QUEUE_MAX_NUM_BLOCKS && threadIdx.x < numImages){
