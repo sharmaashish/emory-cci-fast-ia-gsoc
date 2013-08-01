@@ -332,9 +332,9 @@ BOOST_AUTO_TEST_CASE(partialSumMultipleBlocks)
     //initQueue<<<1, 1>>>(device_queueInitData, queueInitDataSize,
     //                    device_outVector, queueInitDataSize);
 
-    initQueueVector<<<1, numberOfBlocks>>>(device_queueInitInPointers, device_queueSizes,
-                                           device_queueInitOutPointers, device_queueSizes,
-                                           numberOfBlocks);
+    initQueueVector<<<numberOfBlocks, numberOfBlocks>>>(device_queueInitInPointers, device_queueSizes,
+                                                        device_queueInitOutPointers, device_queueSizes,
+                                                        numberOfBlocks);
 
     lastError();
 
