@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE(partialSum)
 #endif
 
     const int queueInitDataSize = 14096;
-    const int numberOfIterations = 100;
+    const int numberOfIterations = 32;
 
     int host_queueInitData[queueInitDataSize];
 
@@ -225,8 +225,8 @@ BOOST_AUTO_TEST_CASE(partialSum)
 
     int* host_outputSum = new int[numberOfIterations];
 
-    checkError(cudaMemcpy((void*)(&host_outputSum), (const void*)device_outputSum,
-                          numberOfIterations * sizeof(int), cudaMemcpyDeviceToHost));
+    checkError(cudaMemcpy((void*)(host_outputSum), (void*)device_outputSum,
+				numberOfIterations * sizeof(int), cudaMemcpyDeviceToHost));
 
     std::cout << "output partial sums: " << std::endl;
 
@@ -408,6 +408,8 @@ BOOST_AUTO_TEST_CASE(morphReconstruction)
     checkError(cudaMalloc(&device_seeds, total_size * sizeof(int)));
     checkError(cudaMemcpy(device_seeds, host_seeds,
                total_size * sizeof(int), cudaMemcpyHostToDevice));
+
+	std::cout << "running morphRecon" << std::endl;
 
     morphRecon(device_input_list, data_elements, device_seeds, device_image, ncols, nrows);
 
