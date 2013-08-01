@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cfloat>
 #include <cassert>
+#include <cmath>
 
 //#include <cuda_runtime_api.h>
 
@@ -194,9 +195,11 @@ BOOST_AUTO_TEST_CASE(partialSum)
 
     int host_queueInitData[queueInitDataSize];
 
+    /*random values from range <0;9> */
+
     for(int i = 0; i < queueInitDataSize; ++i)
     {
-        host_queueInitData[i] = 1;
+        host_queueInitData[i] = rand() % 10;
     }
 
     int *device_queueInitData;
@@ -223,23 +226,41 @@ BOOST_AUTO_TEST_CASE(partialSum)
 
     lastError();
 
-    int* host_outputSum = new int[numberOfIterations];
+    int host_outputSum[numberOfIterations];
 
     checkError(cudaMemcpy((void*)(host_outputSum), (void*)device_outputSum,
 				numberOfIterations * sizeof(int), cudaMemcpyDeviceToHost));
+
+
+    int verificationData[numberOfIterations];
+
+    for(int i = 0, j = 0; i < numberOfIterations; ++i)
+    {
+        int sum = 0;
+
+        for(int k = 0; k < SUM_TEST_BLOCK_SIZE; ++k){
+
+            if(j < queueInitDataSize)
+                break;
+
+            sum += host_queueInitData[j++];
+        }
+
+        verificationData[i] = sum;
+    }
+
 
     std::cout << "output partial sums: " << std::endl;
 
     for(int i = 0; i < numberOfIterations; ++i)
     {
-        std::cout << "outputSum[" << i << "]: " << host_outputSum[i] << std::endl;
+        std::cout << "outputSum[" << i << "]: " << host_outputSum[i]
+                     << ", cpu: " << verificationData[i] << std::endl;
     }
 
     checkError(cudaFree(device_queueInitData));
     checkError(cudaFree(device_outVector));
     checkError(cudaFree(device_outputSum));
-
-    delete[] host_outputSum;
 }
 
 BOOST_AUTO_TEST_CASE(sum)
