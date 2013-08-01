@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE(partialSumMultipleBlocks)
 #endif
 
     const int queueInitDataSize = 1024 * 128; // 512KB
-    const int numberOfIterations = 5;
+    const int numberOfIterations = 4;
     const int numberOfBlocks = 64;
     const int itemsPerBlock = queueInitDataSize / numberOfBlocks;
 
