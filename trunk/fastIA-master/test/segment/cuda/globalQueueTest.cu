@@ -255,7 +255,9 @@ BOOST_AUTO_TEST_CASE(partialSum)
     for(int i = 0; i < numberOfIterations; ++i)
     {
         std::cout << "outputSum[" << i << "]: " << host_outputSum[i]
-                     << ", cpu: " << verificationData[i] << std::endl;
+                     << ", cpu: " << verificationData[i]
+                        << (host_outputSum[i] == verificationData[i] ? ", OK" : ", FAIL")
+                        << std::endl;
     }
 
     checkError(cudaFree(device_queueInitData));
