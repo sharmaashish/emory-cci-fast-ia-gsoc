@@ -8,7 +8,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -DCL_DIR="${CMAKE_CURRENT_SOURCE_DIR}/kernels" -DOUTPUT="${CMAKE_CURRENT_BINARY_DIR}/kernels.cpp" -P "${CMAKE_SOURCE_DIR}/cmake_modules/cl2cpp.cmake"
     DEPENDS ${cl_kernels} "${CMAKE_SOURCE_DIR}/cmake_modules/cl2cpp.cmake")
 
-set(cllibsrcs utils/ocl_utils.cpp utils/ocl_program_cache pixel-ops.cpp watershed.cpp)
+set(cllibsrcs utils/ocl_utils.cpp utils/ocl_program_cache pixel-ops.cpp watershed.cpp parallel_queue.cpp)
 
 list(APPEND cllibsrcs ${cl_kernels} "${CMAKE_CURRENT_BINARY_DIR}/kernels.cpp")
 

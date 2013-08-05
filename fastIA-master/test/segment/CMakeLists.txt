@@ -5,7 +5,7 @@ file(MAKE_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/out)
 
 set(tests sample_test bwareopenTest deconvTest distTransformTest
     imfillTest imreconChunkTest watershedTest watershedNewTest watershedOpenCV #oclTest
-    pixel-opsTest)
+    pixel-opsTest parallelQueueTest)
 
 
 foreach(test ${tests})

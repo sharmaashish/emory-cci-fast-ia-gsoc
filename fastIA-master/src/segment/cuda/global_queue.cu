@@ -104,7 +104,8 @@ __device__ int queueElement(int *elements){
 #ifdef	PREFIX_SUM
     __shared__ int writeAddr[QUEUE_NUM_THREADS];
     __shared__ int exclusiveScan[QUEUE_NUM_THREADS];
-	__shared__ int global_queue_index;
+    __shared__ int global_queue_index; // there is no need to user shared memory here!
+                                       // broadcast read from global memory can be used
 
 	if(threadIdx.x == 0){
 		global_queue_index = outQueueHead[blockIdx.x];
