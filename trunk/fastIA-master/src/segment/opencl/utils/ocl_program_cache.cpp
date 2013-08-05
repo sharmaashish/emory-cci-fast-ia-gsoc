@@ -10,6 +10,7 @@ extern const char * Mask;
 extern const char * Divide;
 extern const char * Replace;
 extern const char * Watershed;
+extern const char * ParallelQueue;
 
 const char* getSourceByName(const std::string str_name){
 
@@ -29,6 +30,8 @@ const char* getSourceByName(const std::string str_name){
         return Replace;
     else if(str_name == "Watershed")
         return Watershed;
+    else if(str_name == "ParallelQueue")
+        return ParallelQueue;
 
     std::cout << "source for name: " << str_name << " not found!" << std::endl;
 
