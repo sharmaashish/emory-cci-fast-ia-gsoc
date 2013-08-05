@@ -13,4 +13,8 @@ void dequeueTest(cl::Buffer& device_result,
                  ProgramCache& cache = ProgramCache::getGlobalInstance(),
                  cl::CommandQueue& queue = ProgramCache::getGlobalInstance().getDefaultCommandQueue());
 
+void sumTest(cl::Buffer& device_result, int iterations,
+             ProgramCache& cache = ProgramCache::getGlobalInstance(),
+             cl::CommandQueue& queue = ProgramCache::getGlobalInstance().getDefaultCommandQueue());
+
 #endif // PARALLEL_QUEUE_H

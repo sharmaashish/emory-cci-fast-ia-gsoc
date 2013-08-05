@@ -303,3 +303,119 @@ __kernel void dequeue_test(__global int* device_result, __local int* gotWork)
     device_result[group_id * group_size + local_id] = workUnit;
 }
 
+// reduction_buffer size should be size of block
+__kernel void partial_sum_test(__global int* output_sum, int iterations,
+                               __local int* reduction_buffer,
+                               __local int* gotWork)
+{
+
+    int blockIdx = get_group_id(0);
+    int blockDim = get_local_size(0);
+    int tid = get_local_id(0);
+
+    setCurrentQueue(blockIdx, blockIdx);
+
+    int loopIt = 0;
+    int workUnit = -1;
+    //int tid = threadIdx.x;
+
+    // SHARED MEMORY FOR PARALLEL REDUCTION
+    //__shared__ int reduction_buffer[SUM_TEST_BLOCK_SIZE];
+
+    int partial_sum;
+
+    for(int i = 0; i < iterations; ++i)
+    {
+        // Try to get some work.
+        workUnit = dequeueElement(&loopIt, gotWork);
+
+        // PREPARING NEXT DATA PART FROM QUEUE TO REDUCTION
+        reduction_buffer[tid] = (workUnit < 0 ? 0 : workUnit);
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        // SIMPLE REDUCTION
+        for (unsigned int s = blockDim/2; s > 0; s >>= 1)
+        {
+            if (tid < s) {
+                reduction_buffer[tid] += reduction_buffer[tid + s];
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+        }
+
+        if(tid == i)
+            partial_sum = reduction_buffer[0];
+    }
+
+    // WRITING FINAL RESULT TO GLOBAL MEMORY
+    if(tid < iterations)
+        output_sum[blockIdx * iterations + tid] = partial_sum;
+}
+
+
+__kernel void sum_test(__global int* output_sum, int iterations,
+                       __local int *local_queue,
+                       __local int *reduction_buffer,
+                       __local int* gotWork,
+                       // queue stuff:
+                       __local int* prefix_sum_input,
+                       __local int* prefix_sum_output,
+                       __local int* prefix_sum_workspace_1,
+                       __local int* prefix_sum_workspace_2)
+{
+
+    int blockIdx = get_group_id(0);
+    int blockDim = get_local_size(0);
+    int tid = get_local_id(0);
+
+    setCurrentQueue(blockIdx, blockIdx);
+
+    int loopIt = 0;
+    int workUnit = -1;
+
+        //__shared__ int localQueue[SUM_TEST_BLOCK_SIZE][2];
+
+        // SHARED MEMORY FOR PARALLEL REDUCTION
+        //__shared__ int reduction_buffer[SUM_TEST_BLOCK_SIZE];
+
+    for(int i = 0; i < iterations; ++i)
+    {
+        //localQueue[tid][0] = 0;
+        local_queue[tid * 2] = 0;
+
+        // Try to get some work.
+        workUnit = dequeueElement(&loopIt, gotWork);
+
+        // PREPARING NEXT DATA PART FROM QUEUE TO REDUCTION
+        reduction_buffer[tid] = (workUnit < 0 ? 0 : workUnit);
+
+        //__syncthreads();
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        // SIMPLE REDUCTION
+        for (unsigned int s = blockDim/2; s > 0; s >>= 1)
+        {
+                if (tid < s) {
+                        reduction_buffer[tid] += reduction_buffer[tid + s];
+                }
+                //__syncthreads();
+                barrier(CLK_LOCAL_MEM_FENCE);
+        }
+
+        // PUTTING SUM TO LOCAL QUEUE
+        if(tid == 0)
+        {
+                local_queue[tid * 2] = 1;
+                local_queue[tid * 2 + 1] = reduction_buffer[0];
+        }
+
+        // PUTTING SUM TO GLOBAL QUEUE
+     //   if(i != iterations - 1)
+           //     queueElement(local_queue[tid], prefix_sum_input,
+            //        prefix_sum_output, prefix_sum_workspace_1, prefix_sum_workspace_2);
+    }
+
+    // WRITING FINAL RESULT TO GLOBAL MEMORY
+    if(tid == 0)
+            *output_sum = reduction_buffer[0];
+}
