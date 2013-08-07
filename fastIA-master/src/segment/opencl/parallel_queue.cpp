@@ -59,12 +59,7 @@ void dequeueTest(cl::Buffer& device_result,
                                                nullRange, global, local);
 }
 
-#define QUEUE_WARP_SIZE 	32
 #define QUEUE_NUM_THREADS	512
-#define QUEUE_NUM_WARPS (QUEUE_NUM_THREADS / QUEUE_WARP_SIZE)
-#define LOG_QUEUE_NUM_THREADS 9
-#define LOG_QUEUE_NUM_WARPS (LOG_QUEUE_NUM_THREADS - 5)
-#define QUEUE_SCAN_STRIDE (QUEUE_WARP_SIZE + QUEUE_WARP_SIZE / 2 + 1)
 
 void sumTest(cl::Buffer& device_result, int iterations,
                  ProgramCache& cache,
@@ -90,8 +85,6 @@ void sumTest(cl::Buffer& device_result, int iterations,
     cl::LocalSpaceArg got_work = cl::__local(sizeof(int));
     cl::LocalSpaceArg prefix_sum_input = cl::__local(sizeof(int) * QUEUE_NUM_THREADS);
     cl::LocalSpaceArg prefix_sum_output = cl::__local(sizeof(int) * QUEUE_NUM_THREADS);
-    cl::LocalSpaceArg prefix_sum_workspace_1 = cl::__local(sizeof(int) * QUEUE_NUM_WARPS * QUEUE_SCAN_STRIDE);
-    cl::LocalSpaceArg prefix_sum_workspace_2 = cl::__local(sizeof(int) * QUEUE_NUM_WARPS + QUEUE_NUM_WARPS / 2);
 
     sum_test_kernel.setArg(0, device_result);
     sum_test_kernel.setArg(1, iterations);
@@ -100,12 +93,10 @@ void sumTest(cl::Buffer& device_result, int iterations,
     sum_test_kernel.setArg(4, got_work);
     sum_test_kernel.setArg(5, prefix_sum_input);
     sum_test_kernel.setArg(6, prefix_sum_output);
-    sum_test_kernel.setArg(7, prefix_sum_workspace_1);
-    sum_test_kernel.setArg(8, prefix_sum_workspace_2);
 
     cl::NDRange nullRange;
-    cl::NDRange global(512, 1);
-    cl::NDRange local(512, 1);
+    cl::NDRange global(QUEUE_NUM_THREADS, 1);
+    cl::NDRange local(QUEUE_NUM_THREADS, 1);
 
     cl_int status = queue.enqueueNDRangeKernel(sum_test_kernel,
                                                nullRange, global, local);

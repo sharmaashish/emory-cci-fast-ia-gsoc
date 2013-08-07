@@ -1,12 +1,5 @@
 #define QUEUE_MAX_NUM_BLOCKS	70
-
-#define QUEUE_WARP_SIZE 	32
 #define QUEUE_NUM_THREADS	512
-#define QUEUE_NUM_WARPS (QUEUE_NUM_THREADS / QUEUE_WARP_SIZE)
-#define LOG_QUEUE_NUM_THREADS 9
-#define LOG_QUEUE_NUM_WARPS (LOG_QUEUE_NUM_THREADS - 5)
-
-#define QUEUE_SCAN_STRIDE (QUEUE_WARP_SIZE + QUEUE_WARP_SIZE / 2 + 1)
 
 __global static volatile int inQueueSize[QUEUE_MAX_NUM_BLOCKS];
 __global static volatile int *inQueuePtr1[QUEUE_MAX_NUM_BLOCKS];
@@ -113,12 +106,53 @@ getWork:
         return element;
 }
 
+void scan(__local const int* prefix_sum_input,
+          __local int* prefix_sum_output)
+{
+    int tid = get_local_id(0);
+    int size = get_local_size(0);
+
+    prefix_sum_output[tid] = prefix_sum_input[tid];
+
+    int offset = 1; //exclusive scan
+
+    for (int d = size>>1; d > 0; d >>= 1)
+    {
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (tid < d)
+        {
+            int ai = offset*(2*tid+1)-1;
+            int bi = offset*(2*tid+2)-1;
+            prefix_sum_output[bi] += prefix_sum_output[ai];
+        }
+        offset *= 2;
+    }
+
+    if (tid == 0) prefix_sum_output[size - 1] = 0;
+
+    for (int d = 1; d < size; d *= 2) // traverse down tree & build scan
+    {
+        offset >>= 1;
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (tid < d)
+        {
+            int ai = offset*(2*tid+1)-1;
+            int bi = offset*(2*tid+2)-1;
+            int t = prefix_sum_output[ai];
+            prefix_sum_output[ai] = prefix_sum_output[bi];
+            prefix_sum_output[bi] += t;
+        }
+    }
+    barrier(CLK_LOCAL_MEM_FENCE);
+}
+
+
 // Utils...
 // http://www.moderngpu.com/intro/scan.html
 
 // prefix_sum_workspace_1 size: QUEUE_NUM_WARPS * QUEUE_SCAN_STRIDE
 // prefix_sum_workspace_2 size: QUEUE_NUM_WARPS + QUEUE_NUM_WARPS / 2
-void scan(__local const int* prefix_sum_input,
+void scan_old(__local const int* prefix_sum_input,
           __local int* prefix_sum_output,
           __local volatile int* prefix_sum_workspace_1,
           __local volatile int* prefix_sum_workspace_2)
@@ -212,9 +246,7 @@ void scan(__local const int* prefix_sum_input,
 // prefix sum input, prefix_sum_output - size should be equal to QUEUE_NUM_THREADS
 int queueElement(__local int *elements,
                  __local int* prefix_sum_input,
-                 __local int* prefix_sum_output,
-                 __local int* prefix_sum_workspace_1,
-                 __local int* prefix_sum_workspace_2)
+                 __local int* prefix_sum_output)
 {
     int queue_index = -1;
 
@@ -235,7 +267,7 @@ int queueElement(__local int *elements,
     prefix_sum_input[threadIdx] = elements[0];
 
     // run a prefix-sum on threads inserting data to the queue
-    scan(prefix_sum_input, prefix_sum_output, prefix_sum_workspace_1, prefix_sum_workspace_2);
+    scan(prefix_sum_input, prefix_sum_output);
 
     // calculate index into the queue where given thread is writing
     queue_index = global_queue_index + prefix_sum_output[threadIdx];
@@ -378,9 +410,7 @@ __kernel void sum_test(__global int* output_sum, int iterations,
                        __local int* gotWork,
                        // queue stuff:
                        __local int* prefix_sum_input,
-                       __local int* prefix_sum_output,
-                       __local int* prefix_sum_workspace_1,
-                       __local int* prefix_sum_workspace_2)
+                       __local int* prefix_sum_output)
 {
 
     int blockIdx = get_group_id(0);
@@ -436,7 +466,7 @@ __kernel void sum_test(__global int* output_sum, int iterations,
         // PUTTING SUM TO GLOBAL QUEUE
         if(i != iterations - 1)
                 queueElement(local_queue + tid*2, prefix_sum_input,
-                    prefix_sum_output, prefix_sum_workspace_1, prefix_sum_workspace_2);
+                    prefix_sum_output);
     }
 
     // WRITING FINAL RESULT TO GLOBAL MEMORY
