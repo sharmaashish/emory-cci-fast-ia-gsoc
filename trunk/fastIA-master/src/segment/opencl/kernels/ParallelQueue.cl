@@ -32,6 +32,9 @@ void setCurrentQueue(int currentQueueIdx, int queueIdx)
 
 // Makes queue 1 point to queue 2, and vice-versa
 void swapQueues(int loopIt){
+
+      //  printf("swapping queues\n");
+
         barrier(CLK_LOCAL_MEM_FENCE);
 
         int group_id = get_group_id(0);
@@ -120,6 +123,19 @@ void scan(__local const int* prefix_sum_input,
           __local volatile int* prefix_sum_workspace_1,
           __local volatile int* prefix_sum_workspace_2)
 {
+    int tid = get_local_id(0);
+    int size = get_local_size(0);
+
+    if(tid == 0)
+    {
+        prefix_sum_output[0] = 0;
+        for(int i = 1; i < size; ++i)
+        {
+            prefix_sum_output[i] = prefix_sum_output[i-1] + prefix_sum_input[i-1];
+        }
+    }
+
+    barrier(CLK_LOCAL_MEM_FENCE);
 
 // values -> prefix_sum_input
 // exclusive -> prefix_sum_output
@@ -130,7 +146,7 @@ void scan(__local const int* prefix_sum_input,
     //__shared__ volatile int scan[QUEUE_NUM_WARPS * QUEUE_SCAN_STRIDE];
 
     // scan -> prefix_sum_workspace_1
-
+/*
     int tid = get_local_id(0);
     int warp = tid / QUEUE_WARP_SIZE;
     int lane = (QUEUE_WARP_SIZE - 1) & tid;
@@ -189,7 +205,7 @@ void scan(__local const int* prefix_sum_input,
 
         // Write the inclusive and exclusive scans to global memory.
 //	inclusive[tid] = sum;
-        prefix_sum_output[tid] = sum - x;
+        prefix_sum_output[tid] = sum - x;*/
 }
 
 // Assuming that all threads in a block are calling this function
@@ -208,7 +224,8 @@ int queueElement(__local int *elements,
     //__shared__ int writeAddr[QUEUE_NUM_THREADS];
     //__shared__ int exclusiveScan[QUEUE_NUM_THREADS];
 
-    /*__shared__ */int global_queue_index;
+    //__shared__
+    int global_queue_index;
 
     //if(threadIdx.x == 0){
     global_queue_index = outQueueHead[blockIdx];
@@ -242,12 +259,14 @@ int queueElement(__local int *elements,
                     execution_code=1;
             }else{
                     curOutQueue[blockIdx][queue_index + i] = elements[i + 1];
+                    printf("queue: %d\n", elements[i + 1]);
             }
     }
 
     // thread 0 updates head of the queue
     if(threadIdx == 0)
     {
+        printf("moving head: %d + %d\n", prefix_sum_output[QUEUE_NUM_THREADS-1], prefix_sum_input[QUEUE_NUM_THREADS-1]);
         outQueueHead[blockIdx]+=prefix_sum_output[QUEUE_NUM_THREADS-1] + prefix_sum_input[QUEUE_NUM_THREADS-1];
 
         if(outQueueHead[blockIdx] >= outQueueMaxSize[blockIdx])
@@ -386,6 +405,10 @@ __kernel void sum_test(__global int* output_sum, int iterations,
         // Try to get some work.
         workUnit = dequeueElement(&loopIt, gotWork);
 
+        if(!tid){
+            printf("first work unit: %d\n", workUnit);
+        }
+
         // PREPARING NEXT DATA PART FROM QUEUE TO REDUCTION
         reduction_buffer[tid] = (workUnit < 0 ? 0 : workUnit);
 
@@ -405,14 +428,15 @@ __kernel void sum_test(__global int* output_sum, int iterations,
         // PUTTING SUM TO LOCAL QUEUE
         if(tid == 0)
         {
-                local_queue[tid * 2] = 1;
-                local_queue[tid * 2 + 1] = reduction_buffer[0];
+            local_queue[tid * 2] = 1;
+            local_queue[tid * 2 + 1] = reduction_buffer[0];
+            printf("storing reduction: %d\n", reduction_buffer[0]);
         }
 
         // PUTTING SUM TO GLOBAL QUEUE
-     //   if(i != iterations - 1)
-           //     queueElement(local_queue[tid], prefix_sum_input,
-            //        prefix_sum_output, prefix_sum_workspace_1, prefix_sum_workspace_2);
+        if(i != iterations - 1)
+                queueElement(local_queue + tid*2, prefix_sum_input,
+                    prefix_sum_output, prefix_sum_workspace_1, prefix_sum_workspace_2);
     }
 
     // WRITING FINAL RESULT TO GLOBAL MEMORY
