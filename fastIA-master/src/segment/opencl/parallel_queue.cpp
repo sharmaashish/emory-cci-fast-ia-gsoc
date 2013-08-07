@@ -22,7 +22,7 @@ void initQueueSystem(int queueMaxNumBlocks, cl::CommandQueue& queue)
 
 void disposeQueueSystem()
 {
-    //queue_workspace.release();
+    queue_workspace = cl::Buffer();
 }
 
 void initQueue(cl::Buffer& inQueueData, int dataElements,
@@ -33,7 +33,12 @@ void initQueue(cl::Buffer& inQueueData, int dataElements,
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
     std::stringstream params_stream;
+    params_stream << "-DQUEUE_MAX_NUM_BLOCKS=" << QUEUE_MAX_NUM_BLOCKS << " ";
+    params_stream << "-DQUEUE_NUM_THREADS=" << QUEUE_NUM_THREADS;
+
     std::string program_params = params_stream.str();
+
+    std::cout << "parallel queue ocl program params: " << program_params << std::endl;
 
     cl::Program& program = cache.getProgram("ParallelQueue", program_params);
 
@@ -62,6 +67,9 @@ void dequeueTest(cl::Buffer& device_result,
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
     std::stringstream params_stream;
+    params_stream << "-DQUEUE_MAX_NUM_BLOCKS=" << QUEUE_MAX_NUM_BLOCKS << " ";
+    params_stream << "-DQUEUE_NUM_THREADS=" << QUEUE_NUM_THREADS;
+
     std::string program_params = params_stream.str();
 
     cl::Program& program = cache.getProgram("ParallelQueue", program_params);
@@ -91,6 +99,9 @@ void sumTest(cl::Buffer& device_result, int iterations,
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
     std::stringstream params_stream;
+    params_stream << "-DQUEUE_MAX_NUM_BLOCKS=" << QUEUE_MAX_NUM_BLOCKS << " ";
+    params_stream << "-DQUEUE_NUM_THREADS=" << QUEUE_NUM_THREADS;
+
     std::string program_params = params_stream.str();
 
     cl::Program& program = cache.getProgram("ParallelQueue", program_params);
