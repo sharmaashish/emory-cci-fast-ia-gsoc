@@ -36,6 +36,8 @@ BOOST_AUTO_TEST_CASE(queue_init_test)
         cl::CommandQueue queue = ProgramCache::getGlobalInstance().getDefaultCommandQueue();
         cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
+        initQueueSystem(10);
+
         int host_in[input_size];
         int host_out[output_size];
         int host_result[result_size];
@@ -95,6 +97,8 @@ BOOST_AUTO_TEST_CASE(queue_sum_test)
     {
         cl::CommandQueue queue = ProgramCache::getGlobalInstance().getDefaultCommandQueue();
         cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
+
+        initQueueSystem(10);
 
         int host_in[input_size];
         int host_out[output_size];
