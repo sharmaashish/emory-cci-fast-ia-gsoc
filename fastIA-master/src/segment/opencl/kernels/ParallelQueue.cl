@@ -321,14 +321,14 @@ int queueElement(QUEUE_WORKSPACE,
                     EXECUTION_CODE=1;
             }else{
                     CUR_OUT_QUEUE[blockIdx][queue_index + i] = elements[i + 1];
-                    printf("queue: %d\n", elements[i + 1]);
+                //    printf("queue: %d\n", elements[i + 1]);
             }
     }
 
     // thread 0 updates head of the queue
     if(threadIdx == 0)
     {
-        printf("moving head: %d + %d\n", prefix_sum_output[QUEUE_NUM_THREADS-1], prefix_sum_input[QUEUE_NUM_THREADS-1]);
+   //     printf("moving head: %d + %d\n", prefix_sum_output[QUEUE_NUM_THREADS-1], prefix_sum_input[QUEUE_NUM_THREADS-1]);
         OUT_QUEUE_HEAD[blockIdx]+=prefix_sum_output[QUEUE_NUM_THREADS-1] + prefix_sum_input[QUEUE_NUM_THREADS-1];
 
         if(OUT_QUEUE_HEAD[blockIdx] >= OUT_QUEUE_MAX_SIZE[blockIdx])
@@ -502,10 +502,6 @@ __kernel void sum_test(QUEUE_WORKSPACE,
         // Try to get some work.
         workUnit = dequeueElement(QUEUE_WORKSPACE_ARG, &loopIt, gotWork);
 
-        if(!tid){
-            printf("first work unit: %d\n", workUnit);
-        }
-
         // PREPARING NEXT DATA PART FROM QUEUE TO REDUCTION
         reduction_buffer[tid] = (workUnit < 0 ? 0 : workUnit);
 
@@ -527,7 +523,6 @@ __kernel void sum_test(QUEUE_WORKSPACE,
         {
             local_queue[tid * 2] = 1;
             local_queue[tid * 2 + 1] = reduction_buffer[0];
-            printf("storing reduction: %d\n", reduction_buffer[0]);
         }
 
         // PUTTING SUM TO GLOBAL QUEUE
