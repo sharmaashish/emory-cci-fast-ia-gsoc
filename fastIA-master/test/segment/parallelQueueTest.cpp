@@ -79,11 +79,11 @@ BOOST_AUTO_TEST_CASE(queue_sum_test)
 
     cl_int err = CL_SUCCESS;
 
-    const int input_size = 1024;
+    const int input_size = 2224;
     const int output_size = 1024;
     //const int result_size = 512;
 
-    const int iterations = 2;
+    const int iterations = 10;
     const int result_size = 1;
 
 

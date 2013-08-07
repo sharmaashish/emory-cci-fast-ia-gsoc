@@ -79,6 +79,12 @@ void sumTest(cl::Buffer& device_result, int iterations,
 
     cl::Kernel sum_test_kernel(program, "sum_test");
 
+    cl::Device device = queue.getInfo<CL_QUEUE_DEVICE>();
+
+    int warp_size = sum_test_kernel.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device);
+
+    std::cout << "warp size: " << warp_size << std::endl;
+
     cl::LocalSpaceArg local_queue = cl::__local(sizeof(int) * QUEUE_NUM_THREADS * 2);
     cl::LocalSpaceArg reduction_buffer = cl::__local(sizeof(int) * QUEUE_NUM_THREADS);
     cl::LocalSpaceArg got_work = cl::__local(sizeof(int));
