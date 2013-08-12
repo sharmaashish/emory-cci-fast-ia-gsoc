@@ -433,7 +433,8 @@ BOOST_AUTO_TEST_CASE(sum)
     int host_outputSum;
 
     checkError(cudaMemcpy((void*)(&host_outputSum),
-                          (const void*)device_outputSum,sizeof(int), cudaMemcpyDeviceToHost));
+                          (const void*)device_outputSum,sizeof(int),
+                          cudaMemcpyDeviceToHost));
 
 	std::cout << "output sum: " << host_outputSum << std::endl;
 
@@ -536,7 +537,8 @@ BOOST_AUTO_TEST_CASE(morphReconstruction)
 
     for(int i = 0; i < data_elements; ++i){
         std::cout << "input_list[" << i << "]: " << host_input_list[i]
-                     << "(" << host_seeds[host_input_list[i]] << ")" << std::endl;
+                     << "(" << host_seeds[host_input_list[i]] << ")"
+                     << std::endl;
     }
 
     int *device_input_list;
@@ -557,7 +559,8 @@ BOOST_AUTO_TEST_CASE(morphReconstruction)
 
 	std::cout << "running morphRecon" << std::endl;
 
-    morphRecon(device_input_list, data_elements, device_seeds, device_image, ncols, nrows);
+    morphRecon(device_input_list, data_elements, device_seeds,
+               device_image, ncols, nrows);
 
     checkError(cudaMemcpy(host_seeds, device_seeds,
                total_size * sizeof(int), cudaMemcpyDeviceToHost));

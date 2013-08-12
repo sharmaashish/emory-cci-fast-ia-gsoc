@@ -11,21 +11,21 @@ class ProgramCache
 {
 public:
     ProgramCache(cl::Context& context, cl::Device& device);
-    cl::Program& getProgram(const std::string& name, const std::string& params = "");
+    cl::Program& getProgram(const std::string& name,
+                            const std::string& params = "");
+    cl::Program& getProgram(const std::vector<std::string>& names,
+                            const std::string& params = "");
 
     cl::Context& getContext();
     cl::Device& getDevice();
     cl::CommandQueue& getDefaultCommandQueue();
-
     static ProgramCache& getGlobalInstance();
 
 private:
     std::map<std::string, cl::Program> programs;
     cl::Context context;
     cl::CommandQueue defaultCommandQueue;
-
     std::vector<cl::Device> devices;
-
     static ProgramCache globalCacheInitialization();
 };
 

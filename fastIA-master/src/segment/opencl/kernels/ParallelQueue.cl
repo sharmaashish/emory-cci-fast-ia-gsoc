@@ -21,7 +21,7 @@
 #define OUT_QUEUE_PTR_2       ((__global int* __global*)(queue_workspace + OUT_QUEUE_PTR_2_OFFSET))
 #define CUR_IN_QUEUE          ((__global int* __global*)(queue_workspace + CUR_IN_QUEUE_OFFSET))
 #define CUR_OUT_QUEUE         ((__global int* __global*)(queue_workspace + CUR_OUT_QUEUE_OFFSET))
-#define EXECUTION_CODE        (((__global int*)(queue_workspace + EXECUTION_CODE_OFFSET))[0])
+#define EXECUTION_CODE        ((__global int*)(queue_workspace + EXECUTION_CODE_OFFSET))
 #define TOTAL_INSERTS         ((__global int*)(queue_workspace + TOTAL_INSERTS_OFFSET))
 
 #define QUEUE_WORKSPACE       __global char* queue_workspace
@@ -178,7 +178,7 @@ int queueElement(QUEUE_WORKSPACE,
         // If the queue storage has been exceed, than set the execution code to 1.
         // This will force a second round in the morphological reconstructio.
         if(queue_index + i >= OUT_QUEUE_MAX_SIZE[blockIdx])
-            EXECUTION_CODE=1;
+            EXECUTION_CODE[blockIdx]=1;
         else
             CUR_OUT_QUEUE[blockIdx][queue_index + i] = elements[i + 1];
     }
@@ -222,123 +222,72 @@ __kernel void init_queue_kernel(QUEUE_WORKSPACE,
     }
 }
 
-__kernel void dequeue_test(QUEUE_WORKSPACE,
-                        __global int* device_result,
-                        __local int* gotWork)
+__kernel void init_queue_id_kernel(QUEUE_WORKSPACE,
+                                __global int* inQueueData, int dataElements,
+                                __global int* outQueueData, int outMaxSize,
+                                int queue_id)
 {
-    int local_id = get_local_id(0);
-    int group_id = get_group_id(0);
-    int group_size = get_local_size(0);
+    if(get_global_id(0) < 1)
+    {
+        // Simply assign input data pointers/number of elements to the queue
+        IN_QUEUE_PTR_1[queue_id] = inQueueData;
 
-    setCurrentQueue(QUEUE_WORKSPACE_ARG, group_id, group_id);
+        IN_QUEUE_SIZE[queue_id] = dataElements;
 
-    int loopIt = 0;
-    int workUnit = dequeueElement(QUEUE_WORKSPACE_ARG, &loopIt, gotWork);
+        TOTAL_INSERTS[queue_id] = 0;
 
-    device_result[group_id * group_size + local_id] = workUnit;
+        //alloc second vector used to queue output elements
+        OUT_QUEUE_PTR_2[queue_id] = outQueueData;
+
+        //Maximum number of elements that fit into the queue
+        OUT_QUEUE_MAX_SIZE[queue_id] = outMaxSize;
+
+        //Head of the out queue
+        OUT_QUEUE_HEAD[queue_id] = 0;
+
+        //Head of the in queue
+        IN_QUEUE_HEAD[queue_id] = 0;
+    }
 }
 
-// reduction_buffer size should be size of block
-__kernel void partial_sum_test(QUEUE_WORKSPACE,
-                               __global int* output_sum, int iterations,
-                               __local int* reduction_buffer,
-                               __local int* gotWork)
-{
-    int blockIdx = get_group_id(0);
-    int blockDim = get_local_size(0);
-    int tid = get_local_id(0);
 
-    setCurrentQueue(QUEUE_WORKSPACE_ARG, blockIdx, blockIdx);
 
-    int loopIt = 0;
-    int workUnit = -1;
-    //int tid = threadIdx.x;
-
-    int partial_sum;
-
-    for(int i = 0; i < iterations; ++i)
-    {
-        // Try to get some work.
-        workUnit = dequeueElement(QUEUE_WORKSPACE_ARG, &loopIt, gotWork);
-
-        // PREPARING NEXT DATA PART FROM QUEUE TO REDUCTION
-        reduction_buffer[tid] = (workUnit < 0 ? 0 : workUnit);
-
-        barrier(CLK_LOCAL_MEM_FENCE);
-
-        // SIMPLE REDUCTION
-        for (unsigned int s = blockDim/2; s > 0; s >>= 1)
-        {
-            if (tid < s) {
-                reduction_buffer[tid] += reduction_buffer[tid + s];
-            }
-            barrier(CLK_LOCAL_MEM_FENCE);
-        }
-
-        if(tid == i)
-            partial_sum = reduction_buffer[0];
-    }
-
-    // WRITING FINAL RESULT TO GLOBAL MEMORY
-    if(tid < iterations)
-        output_sum[blockIdx * iterations + tid] = partial_sum;
-}
-
-__kernel void sum_test(QUEUE_WORKSPACE,
-                       __global int* output_sum, int iterations,
-                       __local int *local_queue,
-                       __local int *reduction_buffer,
-                       __local int* gotWork,
-                       // queue stuff:
-                       __local int* prefix_sum_input,
-                       __local int* prefix_sum_output)
+/* __global void* argument type is workaround, function parameter
+ *  of type __global int* __global* causes compilation fail without
+ *  generating any explanation
+ */
+__kernel void init_queue_vector_kernel(QUEUE_WORKSPACE,
+                                       __global void* inQueueData,
+                                       __global int* dataElements,
+                                       __global void* outQueueData,
+                                       __global int* outMaxSize,
+                                       int queues_count)
 {
 
-    int blockIdx = get_group_id(0);
-    int blockDim = get_local_size(0);
-    int tid = get_local_id(0);
+    __global int* __global* in_queues_data = (__global int* __global*)inQueueData;
+    __global int* __global* out_queues_data = (__global int* __global*)outQueueData;
 
-    setCurrentQueue(QUEUE_WORKSPACE_ARG, blockIdx, blockIdx);
+    int idx = get_global_id(0);
 
-    int loopIt = 0;
-    int workUnit = -1;
-
-    for(int i = 0; i < iterations; ++i)
+    if(idx < QUEUE_MAX_NUM_BLOCKS && idx < queues_count)
     {
-        //localQueue[tid][0] = 0;
-        local_queue[tid * 2] = 0;
+        // Simply assign input data pointers/number of elements to the queue
+        IN_QUEUE_PTR_1[idx] = in_queues_data[idx];;
 
-        // Try to get some work.
-        workUnit = dequeueElement(QUEUE_WORKSPACE_ARG, &loopIt, gotWork);
+        IN_QUEUE_SIZE[idx] = dataElements[idx];
 
-        // PREPARING NEXT DATA PART FROM QUEUE TO REDUCTION
-        reduction_buffer[tid] = (workUnit < 0 ? 0 : workUnit);
+        TOTAL_INSERTS[idx] = 0;
 
-        barrier(CLK_LOCAL_MEM_FENCE);
+        //alloc second vector used to queue output elements
+        OUT_QUEUE_PTR_2[idx] = out_queues_data[idx];
 
-        // SIMPLE REDUCTION
-        for (unsigned int s = blockDim/2; s > 0; s >>= 1)
-        {
-                if (tid < s) {
-                        reduction_buffer[tid] += reduction_buffer[tid + s];
-                }
-                barrier(CLK_LOCAL_MEM_FENCE);
-        }
+        //Maximum number of elements that fit into the queue
+        OUT_QUEUE_MAX_SIZE[idx] = outMaxSize[idx];
 
-        // PUTTING SUM TO LOCAL QUEUE
-        if(tid == 0)
-        {
-            local_queue[tid * 2] = 1;
-            local_queue[tid * 2 + 1] = reduction_buffer[0];
-        }
+        //Head of the out queue
+        OUT_QUEUE_HEAD[idx] = 0;
 
-        // PUTTING SUM TO GLOBAL QUEUE
-        if(i != iterations - 1)
-                queueElement(QUEUE_WORKSPACE_ARG, local_queue + tid*2, prefix_sum_input,
-                    prefix_sum_output);
+        //Head of the in queue
+        IN_QUEUE_HEAD[idx] = 0;
     }
-
-    // WRITING FINAL RESULT TO GLOBAL MEMORY
-    if(tid == 0)
-            *output_sum = reduction_buffer[0];
 }

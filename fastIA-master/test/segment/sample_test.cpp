@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include "opencv2/opencv.hpp"
+#include "opencv2/gpu/gpu.hpp"
 
 using namespace cv;
 
@@ -17,6 +18,5 @@ BOOST_AUTO_TEST_CASE(test1)
     
     BOOST_CHECK(img.data);
     
-    imwrite(DATA_OUT("text.png"), img);
+    imwrite(DATA_OUT("text.png"), img);    
 }
-
