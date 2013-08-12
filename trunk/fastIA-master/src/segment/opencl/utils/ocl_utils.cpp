@@ -17,7 +17,8 @@ void oclSimpleInit(cl_device_type type,
     else
     {
         std::cout << "Platforms size: " << platforms.size() << std::endl;    
-        std::cout << "Platform name: " << platforms[0].getInfo<CL_PLATFORM_NAME>() << std::endl;
+        std::cout << "Platform name: "
+                  << platforms[0].getInfo<CL_PLATFORM_NAME>() << std::endl;
     }
 
     cl_context_properties properties[] =
@@ -41,7 +42,8 @@ void oclSimpleInit(cl_device_type type,
 
 void oclPrintError(cl::Error &error)
 {
-    std::cerr << "ERROR: " << error.what() << "(" << error.err() << ")" << std::endl;
+    std::cerr << "ERROR: " << error.what()
+              << "(" << error.err() << ")" << std::endl;
 }
 
 cl::Buffer ocvMatToOclBuffer(cv::Mat& mat, cl::CommandQueue& queue)
@@ -56,7 +58,8 @@ cl::Buffer ocvMatToOclBuffer(cv::Mat& mat, cl::CommandQueue& queue)
     return buffer;
 }
 
-void ocvMatToOclBuffer(cv::Mat& mat, cl::Buffer& buffer, cl::Context& context, cl::CommandQueue& queue)
+void ocvMatToOclBuffer(cv::Mat& mat, cl::Buffer& buffer,
+                       cl::Context& context, cl::CommandQueue& queue)
 {
     size_t data_size = mat.step * mat.size().height;
 
@@ -64,14 +67,17 @@ void ocvMatToOclBuffer(cv::Mat& mat, cl::Buffer& buffer, cl::Context& context, c
     queue.enqueueWriteBuffer(buffer, CL_TRUE, 0, data_size, mat.data);
 }
 
-void oclBufferToOcvMat(cv::Mat& mat, cl::Buffer& buffer, int size, cl::CommandQueue& queue)
+void oclBufferToOcvMat(cv::Mat& mat, cl::Buffer& buffer,
+                       int size, cl::CommandQueue& queue)
 {
     queue.enqueueReadBuffer(buffer, CL_TRUE, 0, size, mat.data);
 }
 
-void oclBuferToOcvMat(cv::Mat& mat, cl::Buffer buffer, cl::CommandQueue queue)
+void oclBuferToOcvMat(cv::Mat& mat, cl::Buffer buffer,
+                      cl::CommandQueue queue)
 {
-    queue.enqueueReadBuffer(buffer, CL_TRUE, 0, mat.step * mat.size().height, mat.data);
+    queue.enqueueReadBuffer(buffer, CL_TRUE,
+                            0, mat.step * mat.size().height, mat.data);
 }
 
 
@@ -91,7 +97,9 @@ void setLastExecutionTime(float time)
 
 bool checkProfilingSupport(cl::CommandQueue& queue)
 {
-    cl_command_queue_properties queue_properties = queue.getInfo<CL_QUEUE_PROPERTIES>();
+    cl_command_queue_properties queue_properties
+            = queue.getInfo<CL_QUEUE_PROPERTIES>();
+
     return (queue_properties & CL_QUEUE_PROFILING_ENABLE) != 0;
 }
 

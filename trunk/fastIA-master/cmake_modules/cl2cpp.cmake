@@ -2,9 +2,9 @@ MESSAGE(STATUS "running cl2cpp")
 
 file(GLOB cl_list "${CL_DIR}/*.cl" )
 
-file(WRITE ${OUTPUT} "// This file is auto-generated. Do not edit!
+file(WRITE ${OUTPUT} "// This file is auto-generated. Do not edit!\n\n")
 
-")
+file(WRITE ${OUTPUT} "#include \"opencl/utils/ocl_source_registry.h\"\n\n")
 
 foreach(cl ${cl_list})
   get_filename_component(cl_filename "${cl}" NAME_WE)
@@ -28,6 +28,9 @@ foreach(cl ${cl_list})
   string(REGEX REPLACE "\"$" "" lines "${lines}") # unneeded " at the eof
 
   file(APPEND ${OUTPUT} "const char* ${cl_filename}=\"${lines};\n")
+  file(APPEND ${OUTPUT} "const int ${cl_filename}_sideefect
+        = SourceRegistry::getInstance().registerSource(\"${cl_filename}\", ${cl_filename});\n\n")
+
 endforeach()
 
 #file(APPEND ${OUTPUT} "}\n}\n")

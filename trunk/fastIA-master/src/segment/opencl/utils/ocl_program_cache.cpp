@@ -1,69 +1,76 @@
 #include "ocl_program_cache.h"
 
 #include "ocl_utils.h"
+#include "ocl_source_registry.h"
 
-extern const char * HelloOpenCL;
-extern const char * Invert;
-extern const char * Threshold;
-extern const char * Bgr2gray;
-extern const char * Mask;
-extern const char * Divide;
-extern const char * Replace;
-extern const char * Watershed;
-extern const char * ParallelQueue;
-
-const char* getSourceByName(const std::string str_name){
-
-    if(str_name == "HelloOpenCL")
-        return HelloOpenCL;
-    else if(str_name == "Invert")
-        return Invert;
-    else if(str_name == "Threshold")
-        return Threshold;
-    else if(str_name == "Bgr2gray")
-        return Bgr2gray;
-    else if(str_name == "Mask")
-        return Mask;
-    else if(str_name == "Divide")
-        return Divide;
-    else if(str_name == "Replace")
-        return Replace;
-    else if(str_name == "Watershed")
-        return Watershed;
-    else if(str_name == "ParallelQueue")
-        return ParallelQueue;
-
-    std::cout << "source for name: " << str_name << " not found!" << std::endl;
-
-    static const char* empty = "";
-    return empty;
-}
+#define DEBUG_PRINT
 
 ProgramCache::ProgramCache(cl::Context& context, cl::Device& device)
 #ifdef OPENCL_PROFILE
-    : context(context), defaultCommandQueue(cl::CommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE))
+    : context(context),
+      defaultCommandQueue(cl::CommandQueue(context, device,
+                                           CL_QUEUE_PROFILING_ENABLE))
 #else
-    : context(context), defaultCommandQueue(cl::CommandQueue(context, device))
+    : context(context),
+      defaultCommandQueue(cl::CommandQueue(context, device))
 #endif
 {
-
-
     devices.push_back(device);
 }
 
+cl::Program& ProgramCache::getProgram(const std::string& name,
+                                      const std::string& params)
+{
+    std::vector<std::string> names(1, name);
+    return getProgram(names, params);
+}
 
-cl::Program& ProgramCache::getProgram(const std::string& name, const std::string& params){
+struct append_to{
+    append_to(std::string& str) : str(str){}
+    void operator()(const std::string arg) { str.append(arg); }
+    std::string& str;
+};
 
-    std::string key = name + params;
+cl::Program& ProgramCache::getProgram(const std::vector<std::string>& names,
+                                      const std::string& params){
+
+    std::string key;
+
+    std::for_each(names.begin(), names.end(), append_to(key));
+    key += params;
 
     std::map<std::string, cl::Program>::iterator it = programs.find(key);
 
     if(it == programs.end()){
-        const char* source_str = getSourceByName(name);
-        cl::Program::Sources source(1, std::make_pair(source_str, strlen(source_str)));
-        programs[key] = cl::Program(context, source);
 
-        std::cout << "building program: " << name << "... ";
+        cl::Program::Sources sources;
+        std::string source_names;
+
+        for(int i = 0; i < names.size(); ++i)
+        {
+            const char* source_str
+                    = SourceRegistry::getInstance().getSource(names[i]);
+
+            if(source_str == NULL)
+            {
+                std::cerr << "source name not found: "
+                          << names[i] << std::endl;
+                continue;
+            }
+
+            std::pair<const char*, size_t> pair
+                    = std::make_pair(source_str, strlen(source_str));
+
+            sources.push_back(pair);
+            source_names += names[i] + ((i == names.size() - 1) ? "" : " ");
+        }
+
+        programs[key] = cl::Program(context, sources);
+
+#ifdef DEBUG_PRINT
+        std::cout << "building program from sources: "
+                  << source_names << "... ";
+#endif
 
         try
         {
@@ -72,7 +79,8 @@ cl::Program& ProgramCache::getProgram(const std::string& name, const std::string
         catch(cl::Error ex)
         {
             std::cout << std::endl;
-            std::cout << programs[key].getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]);
+            std::cout << programs[key]
+                         .getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]);
             throw ex;
         }
 
@@ -81,6 +89,8 @@ cl::Program& ProgramCache::getProgram(const std::string& name, const std::string
 
     return programs[key];
 }
+
+
 
 cl::Context& ProgramCache::getContext()
 {
@@ -105,7 +115,8 @@ ProgramCache& ProgramCache::getGlobalInstance()
 
 ProgramCache ProgramCache::globalCacheInitialization()
 {
-    std::cout << "initializing global opencl program cache" << std::endl;
+    std::cout << "initializing global opencl program cache"
+              << std::endl;
 
     cl::Context context;
     std::vector<cl::Device> devices;
@@ -113,7 +124,9 @@ ProgramCache ProgramCache::globalCacheInitialization()
     oclSimpleInit(CL_DEVICE_TYPE_ALL, context, devices);
 
     cl::Device device = devices[0];
-    std::cout << "devices count: " << devices.size() << std::endl;
+
+    std::cout << "devices count: "
+              << devices.size() << std::endl;
 
     return ProgramCache(context, device);
 }
