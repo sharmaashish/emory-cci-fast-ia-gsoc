@@ -69,7 +69,7 @@ cl::Program& ProgramCache::getProgram(const std::vector<std::string>& names,
 
 #ifdef DEBUG_PRINT
         std::cout << "building program from sources: "
-                  << source_names << "... ";
+                  << source_names << " , parameters: " << params << "... ";
 #endif
 
         try

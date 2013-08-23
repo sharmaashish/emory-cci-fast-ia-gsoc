@@ -238,14 +238,15 @@ iRec1DForward_X_dilation ( T* marker, const T* mask, const unsigned int sx, cons
 	s_marker[threadIdx.y][WARP_SIZE] = 0;  // only need x=0 to be 0
 
 	// the increment allows overlap by 1 between iterations to move the data to next block.
+
 	for (startx = 0; startx < xstop; startx += WARP_SIZE) {
 		start = (blockIdx.x * XY_THREADS + y * ychunk) * sx + startx + x;
-//			printf("tx: %d, ty: %d, x: %d, y: %d, startx: %d, start: %d", threadIdx.x, threadIdx.y, x, y, startx, start);
+        //printf("tx: %d, ty: %d, x: %d, y: %d, startx: %d, start: %d", threadIdx.x, threadIdx.y, x, y, startx, start);
 
 		s_marker[threadIdx.y][0] = s_marker[threadIdx.y][WARP_SIZE];
 
 		// copy part of marker and mask to shared memory.  works for 1 warp at a time...
-//#pragma unroll
+        //#pragma unroll
 		for (unsigned int i = 0; i < ychunk && y*ychunk+i < sy; ++i) {
 			s_marker[y * ychunk+i][x+1] = marker[start + i*sx];
 			s_mask  [y * ychunk+i][x+1] = mask[start + i*sx];
@@ -253,18 +254,18 @@ iRec1DForward_X_dilation ( T* marker, const T* mask, const unsigned int sx, cons
 
 		// perform iteration   all X threads do the same operations, so there may be read/write hazards.  but the output is the same.
 		// this is looping for BLOCK_SIZE times, and each iteration the final results are propagated 1 step closer to tx.
-//			if (threadIdx.x == 0) {  // have all threads do the same work
-//#pragma unroll
-if (threadIdx.y + blockIdx.x * XY_THREADS < sy) {   //require dimension to be perfectly padded.
-		for (unsigned int i = 1; i <= WARP_SIZE; ++i) {
-			s_old = s_marker[threadIdx.y][i];
-			s_new = min( max( s_marker[threadIdx.y][i-1], s_old ), s_mask[threadIdx.y][i] );
-			s_change |= s_new ^ s_old;
-			s_marker[threadIdx.y][i] = s_new;
-		}
-}
+        //	if (threadIdx.x == 0) {  // have all threads do the same work
+        //#pragma unroll
+        if (threadIdx.y + blockIdx.x * XY_THREADS < sy) {   //require dimension to be perfectly padded.
+            for (unsigned int i = 1; i <= WARP_SIZE; ++i) {
+                s_old = s_marker[threadIdx.y][i];
+                s_new = min( max( s_marker[threadIdx.y][i-1], s_old ), s_mask[threadIdx.y][i] );
+                s_change |= s_new ^ s_old;
+                s_marker[threadIdx.y][i] = s_new;
+            }
+        }
 		// output result back to global memory and set up for next x chunk
-//#pragma unroll
+        //#pragma unroll
 		for (unsigned int i = 0; i < ychunk && y*ychunk+i < sy; ++i) {
 			marker[start + i*sx] = s_marker[y * ychunk+i][x+1];
 		}
@@ -288,22 +289,21 @@ if (threadIdx.y + blockIdx.x * XY_THREADS < sy) {   //require dimension to be pe
 
 		// perform iteration   all X threads do the same operations, so there may be read/write hazards.  but the output is the same.
 		// this is looping for BLOCK_SIZE times, and each iteration the final results are propagated 1 step closer to tx.
-//#pragma unroll
-if (threadIdx.y + blockIdx.x * XY_THREADS < sy) {   //require dimension to be perfectly padded.
-		for (unsigned int i = 1; i <= WARP_SIZE; ++i) {
-			s_old = s_marker[threadIdx.y][i];
-			s_new = min( max( s_marker[threadIdx.y][i-1], s_old ), s_mask[threadIdx.y][i] );
-			s_change |= s_new ^ s_old;
-			s_marker[threadIdx.y][i] = s_new;
-		}
-}
-		// output result back to global memory and set up for next x chunk
-//#pragma unroll
+        //#pragma unroll
+        if (threadIdx.y + blockIdx.x * XY_THREADS < sy) {   //require dimension to be perfectly padded.
+            for (unsigned int i = 1; i <= WARP_SIZE; ++i) {
+                s_old = s_marker[threadIdx.y][i];
+                s_new = min( max( s_marker[threadIdx.y][i-1], s_old ), s_mask[threadIdx.y][i] );
+                s_change |= s_new ^ s_old;
+                s_marker[threadIdx.y][i] = s_new;
+            }
+        }
+        // output result back to global memory and set up for next x chunk
+        //#pragma unroll
 		for (unsigned int i = 0; i < ychunk && y*ychunk+i < sy; ++i) {
 			marker[start + i*sx] = s_marker[y * ychunk+i][x+1];
 		}
 	}
-
 
 //	__syncthreads();
 	if (s_change > 0) *change = true;

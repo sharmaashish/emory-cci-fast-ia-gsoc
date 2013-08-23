@@ -1,3 +1,4 @@
+#define DEBUG
 
 __kernel void dequeue_test(QUEUE_WORKSPACE,
                         __global int* device_result,
@@ -97,10 +98,11 @@ __kernel void sum_test(QUEUE_WORKSPACE,
         // SIMPLE REDUCTION
         for (unsigned int s = blockDim/2; s > 0; s >>= 1)
         {
-                if (tid < s) {
-                        reduction_buffer[tid] += reduction_buffer[tid + s];
-                }
-                barrier(CLK_LOCAL_MEM_FENCE);
+            if (tid < s)
+            {
+                reduction_buffer[tid] += reduction_buffer[tid + s];
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
         }
 
         // PUTTING SUM TO LOCAL QUEUE
@@ -112,12 +114,55 @@ __kernel void sum_test(QUEUE_WORKSPACE,
 
         // PUTTING SUM TO GLOBAL QUEUE
         if(i != iterations - 1)
-                queueElement(QUEUE_WORKSPACE_ARG, local_queue + tid*2, prefix_sum_input,
-                    prefix_sum_output);
+            queueElement(QUEUE_WORKSPACE_ARG, local_queue + tid*2,
+                                    prefix_sum_input, prefix_sum_output);
     }
 
     // WRITING FINAL RESULT TO GLOBAL MEMORY
     if(tid == 0)
             *output_sum = reduction_buffer[0];
+}
+
+
+/* local queue with capacity = 4 is expected */
+__kernel void big_local_queues_test(QUEUE_WORKSPACE,
+                       int iterations,
+                       __local int* local_queue,
+                       __local int* gotWork,
+                       // queue stuff:
+                       __local int* prefix_sum_input,
+                       __local int* prefix_sum_output)
+{
+
+    int blockIdx = get_group_id(0);
+    int blockDim = get_local_size(0);
+    int tid = get_local_id(0);
+
+    setCurrentQueue(QUEUE_WORKSPACE_ARG, blockIdx, blockIdx);
+
+    int loopIt = 0;
+    int workUnit = -1;
+
+    __local int* my_local_queue = local_queue + 5 * tid;
+
+    for(int i = 0; i < iterations; ++i)
+    {
+        /* storing elements int queue */
+        my_local_queue[0] = 1;//tid & 0x3 + ((tid >> 4) & 0x1);
+
+        assert(my_local_queue[0] < 5);
+
+        my_local_queue[1] = 1;
+        my_local_queue[2] = blockDim;
+        my_local_queue[3] = tid;
+        my_local_queue[4] = blockIdx * blockDim * tid;
+
+        queueElement(QUEUE_WORKSPACE_ARG, my_local_queue, prefix_sum_input,
+                                                            prefix_sum_output);
+
+   //     // Try to get some work.
+   //     for(int k = 0; k < 4; ++k)
+   //         workUnit = dequeueElement(QUEUE_WORKSPACE_ARG, &loopIt, gotWork);
+    }
 }
 
