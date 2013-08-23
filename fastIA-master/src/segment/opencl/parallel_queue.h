@@ -12,8 +12,8 @@ void initQueueSystem(cl::CommandQueue& queue = ProgramCache::getGlobalInstance()
 
 void disposeQueueSystem();
 
-void initQueue(cl::Buffer& inQueueData, int dataElements,
-               cl::Buffer& outQueueData, int outMaxSize,
+void initQueue(const cl::Buffer& inQueueData, int dataElements,
+               const cl::Buffer& outQueueData, int outMaxSize,
                ProgramCache& cache = ProgramCache::getGlobalInstance(),
                cl::CommandQueue& queue = ProgramCache::getGlobalInstance()
                .getDefaultCommandQueue());

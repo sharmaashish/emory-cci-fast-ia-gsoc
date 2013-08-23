@@ -1,6 +1,19 @@
 /*
     QUEUE_MAX_NUM_BLOCKS, QUEUE_NUM_THREADS <-- should be passed when program is build
 */
+#define DEBUG
+
+#ifdef DEBUG
+#define assert(x) \
+            if (! (x)) \
+            { \
+                printf((__constant char*)"Assert(%s) failed in line: %d\n", \
+                       (__constant char*)#x, __LINE__); \
+            }
+#else
+        #define assert(X)
+        //#define printf(fmt, ...)
+#endif
 
 #define IN_QUEUE_SIZE_OFFSET      (0)
 #define IN_QUEUE_PTR_1_OFFSET     (sizeof(int) * QUEUE_MAX_NUM_BLOCKS)
@@ -21,7 +34,7 @@
 #define OUT_QUEUE_PTR_2       ((__global int* __global*)(queue_workspace + OUT_QUEUE_PTR_2_OFFSET))
 #define CUR_IN_QUEUE          ((__global int* __global*)(queue_workspace + CUR_IN_QUEUE_OFFSET))
 #define CUR_OUT_QUEUE         ((__global int* __global*)(queue_workspace + CUR_OUT_QUEUE_OFFSET))
-#define EXECUTION_CODE        ((__global int*)(queue_workspace + EXECUTION_CODE_OFFSET))
+#define EXECUTION_CODE        (((__global int*)(queue_workspace + EXECUTION_CODE_OFFSET))[0])
 #define TOTAL_INSERTS         ((__global int*)(queue_workspace + TOTAL_INSERTS_OFFSET))
 
 #define QUEUE_WORKSPACE       __global char* queue_workspace
@@ -29,14 +42,16 @@
 
 void setCurrentQueue(QUEUE_WORKSPACE, int currentQueueIdx, int queueIdx)
 {
-        CUR_IN_QUEUE[currentQueueIdx] = IN_QUEUE_PTR_1[queueIdx];
-        CUR_OUT_QUEUE[currentQueueIdx] = OUT_QUEUE_PTR_2[queueIdx];
+    CUR_IN_QUEUE[currentQueueIdx] = IN_QUEUE_PTR_1[queueIdx];
+    CUR_OUT_QUEUE[currentQueueIdx] = OUT_QUEUE_PTR_2[queueIdx];
+
+    //printf("setting current queue, thread %d\n", get_local_id(0));
 }
 
 // Makes queue 1 point to queue 2, and vice-versa
 void swapQueues(QUEUE_WORKSPACE, int loopIt){
 
-    barrier(CLK_LOCAL_MEM_FENCE);
+    barrier(CLK_GLOBAL_MEM_FENCE);
 
     int group_id = get_group_id(0);
     int local_id = get_local_id(0);
@@ -69,37 +84,42 @@ void swapQueues(QUEUE_WORKSPACE, int loopIt){
         }
     }
 
-    barrier(CLK_LOCAL_MEM_FENCE);
+    barrier(CLK_GLOBAL_MEM_FENCE);
+
+    printf("swapping queues\n");
 }
 
 
 // -2, nothing else to be done at all
-int dequeueElement(QUEUE_WORKSPACE, int *loopIt, __local volatile int* gotWork){
+int dequeueElement(QUEUE_WORKSPACE, int *loopIt, __local volatile int* gotWork)
+{
+    int threadIdx = get_local_id(0);
+    int blockIdx = get_group_id(0);
 
 getWork:
         *gotWork = 0;
 
         // Try to get some work.
-        int queue_index = IN_QUEUE_HEAD[get_group_id(0)] + get_local_id(0);
+        int queue_index = IN_QUEUE_HEAD[blockIdx] + threadIdx;
 
         barrier(CLK_LOCAL_MEM_FENCE);
 
         if(get_local_id(0) == 0){
-            IN_QUEUE_HEAD[get_group_id(0)] += get_local_size(0);
+            IN_QUEUE_HEAD[blockIdx] += threadIdx;
         }
 
         // Nothing to do by default
         int element = -1;
-        if(queue_index < IN_QUEUE_SIZE[get_group_id(0)]){
-            element = CUR_IN_QUEUE[get_group_id(0)][queue_index];
+        if(queue_index < IN_QUEUE_SIZE[blockIdx]){
+            element = CUR_IN_QUEUE[blockIdx][queue_index];
             *gotWork = 1;
         }
-        barrier(CLK_LOCAL_MEM_FENCE);
+        barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
         // This block does not have anything to process
         if(!*gotWork){
             element = -2;
-            if(OUT_QUEUE_HEAD[get_group_id(0)] != 0){
+            if(OUT_QUEUE_HEAD[blockIdx] != 0){
                 swapQueues(QUEUE_WORKSPACE_ARG, loopIt[0]);
                 loopIt[0]++;
                 goto getWork;
@@ -126,6 +146,10 @@ void scan(__local const int* prefix_sum_input,
         {
             int ai = offset*(2*tid+1)-1;
             int bi = offset*(2*tid+2)-1;
+
+            assert(ai < QUEUE_NUM_THREADS);
+            assert(bi < QUEUE_NUM_THREADS);
+
             prefix_sum_output[bi] += prefix_sum_output[ai];
         }
         offset *= 2;
@@ -141,6 +165,10 @@ void scan(__local const int* prefix_sum_input,
         {
             int ai = offset*(2*tid+1)-1;
             int bi = offset*(2*tid+2)-1;
+
+            assert(ai < QUEUE_NUM_THREADS);
+            assert(bi < QUEUE_NUM_THREADS);
+
             int t = prefix_sum_output[ai];
             prefix_sum_output[ai] = prefix_sum_output[bi];
             prefix_sum_output[bi] += t;
@@ -157,8 +185,6 @@ int queueElement(QUEUE_WORKSPACE,
                  __local int* prefix_sum_input,
                  __local int* prefix_sum_output)
 {
-    int queue_index = -1;
-
     int threadIdx = get_local_id(0);
     int blockIdx = get_group_id(0);
 
@@ -171,15 +197,21 @@ int queueElement(QUEUE_WORKSPACE,
     scan(prefix_sum_input, prefix_sum_output);
 
     // calculate index into the queue where given thread is writing
-    queue_index = global_queue_index + prefix_sum_output[threadIdx];
+    int queue_index = global_queue_index + prefix_sum_output[threadIdx];
+
+    assert(elements[0] >= 0 && elements[0] <= 4);
+    assert(prefix_sum_output[threadIdx] <= 4 * QUEUE_NUM_THREADS);
+
+    assert(prefix_sum_output[QUEUE_NUM_THREADS-1]
+            + prefix_sum_input[QUEUE_NUM_THREADS-1] == 512);
 
     for(int i = 0; i < elements[0]; i++)
     {
-        // If the queue storage has been exceed, than set the execution code to 1.
-        // This will force a second round in the morphological reconstructio.
-        if(queue_index + i >= OUT_QUEUE_MAX_SIZE[blockIdx])
-            EXECUTION_CODE[blockIdx]=1;
-        else
+//        // If the queue storage has been exceed, than set the execution code to 1.
+//        // This will force a second round in the morphological reconstructio.
+//        if(queue_index + i >= OUT_QUEUE_MAX_SIZE[blockIdx])
+//            i == i;//EXECUTION_CODE = 1;
+//        else
             CUR_OUT_QUEUE[blockIdx][queue_index + i] = elements[i + 1];
     }
 
@@ -190,7 +222,10 @@ int queueElement(QUEUE_WORKSPACE,
                                   + prefix_sum_input[QUEUE_NUM_THREADS-1];
 
         if(OUT_QUEUE_HEAD[blockIdx] >= OUT_QUEUE_MAX_SIZE[blockIdx])
+        {
             OUT_QUEUE_HEAD[blockIdx] = OUT_QUEUE_MAX_SIZE[blockIdx];
+            //printf("max exceeded");
+        }
     }
     return queue_index;
 }
