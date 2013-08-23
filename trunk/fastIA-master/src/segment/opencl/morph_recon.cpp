@@ -6,7 +6,74 @@
 
 #define DEBUG_PRINT
 
+#define RECON_INIT_THREADS_X 16
+#define RECON_INIT_THREADS_Y 16
+
 extern cl::Buffer queue_workspace;
+
+
+void morphReconInit(cl::Buffer marker, cl::Buffer mask,
+                    int width, int height,
+                    ProgramCache &cache, cl::CommandQueue &queue)
+{
+    cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
+
+    std::stringstream params_stream;
+    params_stream << "-DQUEUE_MAX_NUM_BLOCKS=" << QUEUE_MAX_NUM_BLOCKS;
+    params_stream << " -DQUEUE_NUM_THREADS=" << QUEUE_NUM_THREADS;
+
+    /* setting program parameters */
+    std::string program_params = params_stream.str();
+
+    std::cout << "parallel queue-based morphological reconstruction "
+                 "ocl program params: " << program_params << std::endl;
+
+    std::vector<std::string> sources;
+    sources.push_back("ParallelQueue");
+    sources.push_back("MorphRecon");
+
+    cl::Program& program = cache.getProgram(sources, program_params);
+
+    /* obtaining kernel */
+    cl::Kernel scan_forward_rows_kernel(program, "scan_forward_rows_kernel");
+
+    /* allocating buffers */
+
+    cl::Buffer changed(context, CL_TRUE, sizeof(int));
+
+    cl::LocalSpaceArg marker_local = cl::__local(sizeof(int)
+                                                 * RECON_INIT_THREADS_X
+                                                 * RECON_INIT_THREADS_Y);
+
+    cl::LocalSpaceArg mask_local = cl::__local(sizeof(int)
+                                                 * RECON_INIT_THREADS_X
+                                                 * RECON_INIT_THREADS_Y);
+
+    scan_forward_rows_kernel.setArg(0, marker);
+    scan_forward_rows_kernel.setArg(1, mask);
+    scan_forward_rows_kernel.setArg(2, changed);
+    scan_forward_rows_kernel.setArg(3, marker_local);
+    scan_forward_rows_kernel.setArg(4, mask_local);
+    scan_forward_rows_kernel.setArg(5, width);
+    scan_forward_rows_kernel.setArg(6, height);
+
+
+    /* calculating kernel dimensions */
+
+    cl::NDRange local(RECON_INIT_THREADS_X, RECON_INIT_THREADS_Y);
+
+    int global_x = RECON_INIT_THREADS_X;
+    int global_y = (height + RECON_INIT_THREADS_Y - 1 / RECON_INIT_THREADS_Y)
+                                                        * RECON_INIT_THREADS_Y;
+    cl::NDRange global(global_x, global_y);
+
+    cl_int status = queue.enqueueNDRangeKernel(scan_forward_rows_kernel,
+                                               cl::NullRange, global, local);
+}
+
+
+
+
 
 void morphRecon(cl::Buffer input_list, int dataElements, cl::Buffer seeds,
                 cl::Buffer image, int ncols, int nrows,
@@ -26,6 +93,9 @@ void morphRecon(cl::Buffer input_list, int dataElements, cl::Buffer seeds,
     std::stringstream params_stream;
     params_stream << "-DQUEUE_MAX_NUM_BLOCKS=" << QUEUE_MAX_NUM_BLOCKS;
     params_stream << " -DQUEUE_NUM_THREADS=" << QUEUE_NUM_THREADS;
+    params_stream << " -Werror";
+//    params_stream << " -cl-opt-disable";
+
 
     std::string program_params = params_stream.str();
 

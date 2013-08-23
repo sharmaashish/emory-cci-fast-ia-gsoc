@@ -10,12 +10,71 @@ inline int propagate(__global int* seeds, __global uchar* image,
 
     if((seedXYval < pval) && (imageXYval != seedXYval))
     {
-        uchar newValue = min(pval, imageXYval);
+        int newValue = min(pval, imageXYval);
         atomic_max(&(seeds[index]), newValue);
         returnValue = index;
     }
 
     return returnValue;
+}
+
+
+__kernel void scan_forward_rows_kernel(__global int* marker,
+                                       __global int* mask,
+                                       __global int* changed_global,
+                                       __local int* marker_local,
+                                       __local int* mask_local,
+                                       int width, int height)
+{
+//    int local_id_x = get_local_id(0);
+//    int local_id_y = get_local_id(1);
+
+//    int group_size_x = get_local_size(0);
+//    int group_size_y = get_local_size(1);
+
+//    int group_id = get_group_id(0);
+
+//    // load from global to local
+
+//    int row = group_id * group_size_y + local_id_y;
+
+//    int idx_local = local_id_y * group_size_x + local_id_x;
+
+//    int step = group_size_x - 1;
+//    int changed = 0;
+
+//    for(int i = local_id_x; i < width; i += step)
+//    {
+//        int idx_global = row + i;
+
+//        marker_local[idx_local] = marker[idx_global];
+//        mask_local[idx_local] = mask[idx_global];
+
+//        barrier(CLK_LOCAL_MEM_FENCE);
+
+//        if(local_id_x == 0)
+//        {
+//            for(int col = 0; i < group_size_x - 1
+//                        && idx_global + col < width; ++i)
+//            {
+//                int marker_val = marker_local[col];
+//                int mask_val = mask_local[col];
+
+//                int marker_forward_val = idx_global + col + 1 < width
+//                                            ? marker_local[col+1] : 0;
+
+//                int marker_new = min(max(marker_val, marker_forward_val),
+//                                     mask_val);
+
+//                changed |= marker_val ^ marker_new;
+//            }
+//        }
+
+//        barrier(CLK_LOCAL_MEM_FENCE);
+//    }
+
+//    if(changed)
+//        changed_global = 1;
 }
 
 __kernel void morph_recon_kernel(__global int* total_inserts,
@@ -51,6 +110,8 @@ __kernel void morph_recon_kernel(__global int* total_inserts,
         workUnit = dequeueElement(QUEUE_WORKSPACE_ARG, &loopIt, gotWork);
         y = workUnit / ncols;
         x = workUnit % ncols; // modulo is very inefficient on gpu!
+
+        assert(workUnit < ncols * nrows);
 
         uchar pval = 0;
 
