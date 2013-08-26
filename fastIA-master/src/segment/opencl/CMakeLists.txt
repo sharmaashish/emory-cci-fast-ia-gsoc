@@ -19,7 +19,8 @@ set(cllibsrcs
     pixel-ops.cpp
     watershed.cpp
     parallel_queue.cpp
-    morph_recon.cpp)
+    morph_recon.cpp
+    )
 
 list(APPEND cllibsrcs ${cl_kernels} "${CMAKE_CURRENT_BINARY_DIR}/${ocl_kernels_file}")
 

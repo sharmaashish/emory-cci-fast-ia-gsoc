@@ -26,55 +26,62 @@ __kernel void scan_forward_rows_kernel(__global int* marker,
                                        __local int* mask_local,
                                        int width, int height)
 {
-//    int local_id_x = get_local_id(0);
-//    int local_id_y = get_local_id(1);
+    int local_id_x = get_local_id(0);
+    int local_id_y = get_local_id(1);
 
-//    int group_size_x = get_local_size(0);
-//    int group_size_y = get_local_size(1);
+    int group_size_x = get_local_size(0);
+    int group_size_y = get_local_size(1);
 
-//    int group_id = get_group_id(0);
+    int group_id = get_group_id(0);
 
-//    // load from global to local
+    // load from global to local
 
-//    int row = group_id * group_size_y + local_id_y;
+    int row = group_id * group_size_y + local_id_y;
 
-//    int idx_local = local_id_y * group_size_x + local_id_x;
+    int idx_local = local_id_y * group_size_x + local_id_x;
 
-//    int step = group_size_x - 1;
-//    int changed = 0;
+    int step = group_size_x - 1;
+    int changed = 0;
 
-//    for(int i = local_id_x; i < width; i += step)
-//    {
-//        int idx_global = row + i;
+    for(int i = local_id_x; i < width; i += step)
+    {
+        int idx_global = row + i;
 
-//        marker_local[idx_local] = marker[idx_global];
-//        mask_local[idx_local] = mask[idx_global];
+        marker_local[idx_local] = marker[idx_global];
+        mask_local[idx_local] = mask[idx_global];
 
-//        barrier(CLK_LOCAL_MEM_FENCE);
+        barrier(CLK_LOCAL_MEM_FENCE);
 
-//        if(local_id_x == 0)
-//        {
-//            for(int col = 0; i < group_size_x - 1
-//                        && idx_global + col < width; ++i)
-//            {
-//                int marker_val = marker_local[col];
-//                int mask_val = mask_local[col];
+        if(local_id_x == 0)
+        {
+            for(int col = 0; i < group_size_x - 1
+                        && idx_global + col < width; ++i)
+            {
+                int marker_val = marker_local[col];
+                int mask_val = mask_local[col];
 
-//                int marker_forward_val = idx_global + col + 1 < width
-//                                            ? marker_local[col+1] : 0;
+                int marker_forward_val = idx_global + col + 1 < width
+                                            ? marker_local[col+1] : 0;
 
-//                int marker_new = min(max(marker_val, marker_forward_val),
-//                                     mask_val);
+                int marker_new = min(max(marker_val, marker_forward_val),
+                                     mask_val);
 
-//                changed |= marker_val ^ marker_new;
-//            }
-//        }
+                changed |= marker_val ^ marker_new;
+            }
+        }
+printf("back to global\n");
+        barrier(CLK_LOCAL_MEM_FENCE);
 
-//        barrier(CLK_LOCAL_MEM_FENCE);
-//    }
+        marker[idx_global] = marker_local[idx_local];
+        //mask[idx_global] = mask_local[idx_local];
 
-//    if(changed)
-//        changed_global = 1;
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+
+    printf("changed %d\n", changed);
+
+    if(changed)
+        changed_global = 1;
 }
 
 __kernel void morph_recon_kernel(__global int* total_inserts,
@@ -82,7 +89,8 @@ __kernel void morph_recon_kernel(__global int* total_inserts,
                                  __global uchar* image,
                                  int ncols, int nrows,
                                  // all this shared stuff for queues:
-                                 QUEUE_WORKSPACE,
+                                 QUEUE_DATA,
+                                 QUEUE_METADATA,
                                  __local int *local_queue,
                                  __local int *reduction_buffer,
                                  __local int* gotWork,
@@ -94,20 +102,20 @@ __kernel void morph_recon_kernel(__global int* total_inserts,
     int group_id = get_group_id(0);
     int group_size = get_local_size(0);
 
-    setCurrentQueue(QUEUE_WORKSPACE_ARG, group_id, group_id);
+  //  setCurrentQueue(QUEUE_WORKSPACE_ARG, group_id, group_id);
 
     int loopIt = 0;
     int workUnit = -1;
     int x, y;
 
     __local int* my_local_queue = local_queue + LOCAL_QUEUE_SIZE * local_id;
-
+int counter = 0;
     do{
         /* queue occupancy initialization */
         my_local_queue[0] = 0;
 
         // Try to get some work.
-        workUnit = dequeueElement(QUEUE_WORKSPACE_ARG, &loopIt, gotWork);
+        workUnit = dequeueElement(queue_data, queue_metadata, &loopIt, gotWork);
         y = workUnit / ncols;
         x = workUnit % ncols; // modulo is very inefficient on gpu!
 
@@ -165,9 +173,10 @@ __kernel void morph_recon_kernel(__global int* total_inserts,
             }
         }
 
-        queueElement(QUEUE_WORKSPACE_ARG, my_local_queue,
+        queueElement(queue_data, queue_metadata, my_local_queue,
                         prefix_sum_input, prefix_sum_output);
 
+      //  printf("turn");
     }while(workUnit != -2);
 
     total_inserts[group_id] = TOTAL_INSERTS[group_id];

@@ -12,9 +12,11 @@
 #include "opencl/parallel_queue.h"
 #include "opencl/staticInitializer.h"
 
-#define ITER_NUM 100
+#include <cstdio>
 
-extern cl::Buffer queue_workspace;
+#define ITER_NUM 1
+
+//extern cl::Buffer queue_workspace;
 
 static const int oclSourceInit = StaticInitializer::forceOclSourceRegistration();
 
@@ -23,23 +25,31 @@ static const int oclSourceInit = StaticInitializer::forceOclSourceRegistration()
  * (opencl internally invokes subprocess that return non-zero value)
  **/
 
-void dequeueTest(cl::Buffer& device_result,
+void dequeueTest(cl::Buffer queue_data, cl::Buffer queue_metadata,
+                 cl::Buffer& device_result,
                  ProgramCache& cache = ProgramCache::getGlobalInstance(),
                  cl::CommandQueue& queue = ProgramCache::getGlobalInstance()
                                                     .getDefaultCommandQueue());
 
-void sumTest(cl::Buffer& device_result, int iterations,
+//void sumTest(cl::Buffer& device_result, int iterations,
+//             ProgramCache& cache = ProgramCache::getGlobalInstance(),
+//             cl::CommandQueue& queue = ProgramCache::getGlobalInstance()
+//                                                    .getDefaultCommandQueue());
+
+void sumTest(cl::Buffer queue_data, cl::Buffer queue_metadata,
+             cl::Buffer& device_result, int iterations,
              ProgramCache& cache = ProgramCache::getGlobalInstance(),
              cl::CommandQueue& queue = ProgramCache::getGlobalInstance()
-                                                    .getDefaultCommandQueue());
+                                                   .getDefaultCommandQueue());
 
-void bigLocalQueuesTest(int iterations,
+void bigLocalQueuesTest(cl::Buffer queue_data, cl::Buffer queue_metadata,
+            int iterations,
             ProgramCache& cache = ProgramCache::getGlobalInstance(),
             cl::CommandQueue& queue = ProgramCache::getGlobalInstance()
                                                    .getDefaultCommandQueue());
 
-void dequeueTest(cl::Buffer& device_result,
-                 ProgramCache& cache,
+void dequeueTest(cl::Buffer queue_data, cl::Buffer queue_metadata,
+                 cl::Buffer& device_result, ProgramCache& cache,
                  cl::CommandQueue& queue)
 {
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
@@ -60,9 +70,10 @@ void dequeueTest(cl::Buffer& device_result,
 
     cl::LocalSpaceArg local_mem = cl::__local(sizeof(int));
 
-    dequeue_test_kernel.setArg(0, queue_workspace);
-    dequeue_test_kernel.setArg(1, device_result);
-    dequeue_test_kernel.setArg(2, local_mem);
+    dequeue_test_kernel.setArg(0, queue_data);
+    dequeue_test_kernel.setArg(1, queue_metadata);
+    dequeue_test_kernel.setArg(2, device_result);
+    dequeue_test_kernel.setArg(3, local_mem);
 
     cl::NDRange nullRange;
     cl::NDRange global(512, 1);
@@ -73,9 +84,10 @@ void dequeueTest(cl::Buffer& device_result,
 }
 
 
-void sumTest(cl::Buffer& device_result, int iterations,
-                 ProgramCache& cache,
-                 cl::CommandQueue& queue)
+void sumTest(cl::Buffer queue_data, cl::Buffer queue_metadata,
+             cl::Buffer& device_result, int iterations,
+             ProgramCache& cache,
+             cl::CommandQueue& queue)
 {
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
@@ -111,14 +123,15 @@ void sumTest(cl::Buffer& device_result, int iterations,
     cl::LocalSpaceArg prefix_sum_output
             = cl::__local(sizeof(int) * QUEUE_NUM_THREADS);
 
-    sum_test_kernel.setArg(0, queue_workspace);
-    sum_test_kernel.setArg(1, device_result);
-    sum_test_kernel.setArg(2, iterations);
-    sum_test_kernel.setArg(3, local_queue);
-    sum_test_kernel.setArg(4, reduction_buffer);
-    sum_test_kernel.setArg(5, got_work);
-    sum_test_kernel.setArg(6, prefix_sum_input);
-    sum_test_kernel.setArg(7, prefix_sum_output);
+    sum_test_kernel.setArg(0, queue_data);
+    sum_test_kernel.setArg(1, queue_metadata);
+    sum_test_kernel.setArg(2, device_result);
+    sum_test_kernel.setArg(3, iterations);
+    sum_test_kernel.setArg(4, local_queue);
+    sum_test_kernel.setArg(5, reduction_buffer);
+    sum_test_kernel.setArg(6, got_work);
+    sum_test_kernel.setArg(7, prefix_sum_input);
+    sum_test_kernel.setArg(8, prefix_sum_output);
 
     cl::NDRange nullRange;
     cl::NDRange global(QUEUE_NUM_THREADS, 1);
@@ -128,9 +141,9 @@ void sumTest(cl::Buffer& device_result, int iterations,
                                                nullRange, global, local);
 }
 
-void bigLocalQueuesTest(int iterations,
-                 ProgramCache& cache,
-                 cl::CommandQueue& queue)
+void bigLocalQueuesTest(cl::Buffer queue_data, cl::Buffer queue_metadata,
+                        int iterations, ProgramCache& cache,
+                        cl::CommandQueue& queue)
 {
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
@@ -157,23 +170,27 @@ void bigLocalQueuesTest(int iterations,
     cl::LocalSpaceArg prefix_sum_output
             = cl::__local(sizeof(int) * QUEUE_NUM_THREADS);
 
-    big_local_queues_test.setArg(0, queue_workspace);
-    big_local_queues_test.setArg(1, iterations);
-    big_local_queues_test.setArg(2, local_queue);
-    big_local_queues_test.setArg(3, got_work);
-    big_local_queues_test.setArg(4, prefix_sum_input);
-    big_local_queues_test.setArg(5, prefix_sum_output);
+    big_local_queues_test.setArg(0, queue_data);
+    big_local_queues_test.setArg(1, queue_metadata);
+    big_local_queues_test.setArg(2, iterations);
+    big_local_queues_test.setArg(3, local_queue);
+    big_local_queues_test.setArg(4, got_work);
+    big_local_queues_test.setArg(5, prefix_sum_input);
+    big_local_queues_test.setArg(6, prefix_sum_output);
 
     cl::NDRange nullRange;
     cl::NDRange global(QUEUE_NUM_THREADS, 1);
     cl::NDRange local(QUEUE_NUM_THREADS, 1);
 
+   // std::cout << "enqueuing big_local_queues_test kernel" << std::endl;
+
     cl_int status = queue.enqueueNDRangeKernel(big_local_queues_test,
                                                nullRange, global, local);
+    //fflush(stdout);
 }
 
 
-BOOST_AUTO_TEST_CASE(queue_init_test)
+BOOST_AUTO_TEST_CASE(dequeue_test)
 {
     for(int i = 0; i < ITER_NUM; ++i)
     {
@@ -181,6 +198,7 @@ BOOST_AUTO_TEST_CASE(queue_init_test)
 
         const int input_size = 512;
         const int output_size = 512;
+        const int total_size = output_size * 2;
         const int result_size = 512;
 
         const int input_size_bytes = input_size * sizeof(int);
@@ -189,35 +207,38 @@ BOOST_AUTO_TEST_CASE(queue_init_test)
 
         try
         {
-            cl::CommandQueue queue = ProgramCache::getGlobalInstance().getDefaultCommandQueue();
+            cl::CommandQueue queue = ProgramCache::getGlobalInstance()
+                                                    .getDefaultCommandQueue();
             cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
             std::cout << "init queue system" << std::endl;
-            initQueueSystem();
+            //initQueueSystem();
 
-            int host_in[input_size];
-            int host_out[output_size];
+            int host_queue_data[total_size];
             int host_result[result_size];
 
-            std::fill(host_in, host_in + input_size, 1);
-            std::fill(host_out, host_out + output_size, 0);
+            std::fill(host_queue_data, host_queue_data + input_size, 1);
+            std::fill(host_queue_data + input_size,
+                      host_queue_data + total_size, 0);
 
-            cl::Buffer device_in(context, CL_TRUE, input_size_bytes);
-            queue.enqueueWriteBuffer(device_in, CL_TRUE, 0, input_size_bytes, host_in);
+            cl::Buffer device_queue_data(context, CL_TRUE,
+                                         sizeof(host_queue_data));
+            queue.enqueueWriteBuffer(device_queue_data, CL_TRUE, 0,
+                                     sizeof(host_queue_data), host_queue_data);
 
-            cl::Buffer device_out(context, CL_TRUE, output_size_bytes);
-            queue.enqueueWriteBuffer(device_out, CL_TRUE, 0, output_size_bytes, host_out);
+            cl::Buffer device_queue_metadata;
 
-            // initialize queue
-            std::cout << "init queue" << std::endl;
-            initQueue(device_in, input_size, device_out, output_size);
+            // initialize queue metadata buffer
+            initQueueMetadata(input_size, total_size, device_queue_metadata);
 
             cl::Buffer device_result(context, CL_TRUE, result_size_bytes);
 
             std::cout << "dequeue test" << std::endl;
-            dequeueTest(device_result);
+            dequeueTest(device_queue_data,
+                        device_queue_metadata,device_result);
 
-            queue.enqueueReadBuffer(device_result, CL_TRUE, 0, result_size_bytes, host_result);
+            queue.enqueueReadBuffer(device_result, CL_TRUE, 0,
+                                    result_size_bytes, host_result);
 
             for(int i = 0; i < result_size; ++i)
             {
@@ -231,7 +252,7 @@ BOOST_AUTO_TEST_CASE(queue_init_test)
             oclPrintError(err);
         }
 
-        std::cout << "init queue test finished" << std::endl;
+        std::cout << "dequeue test finished" << std::endl;
     }
 }
 
@@ -244,9 +265,10 @@ BOOST_AUTO_TEST_CASE(queue_sum_test)
 
         cl_int err = CL_SUCCESS;
 
-        const int input_size = 2224;
+        const int input_size = 1024;
         const int output_size = 1024;
         //const int result_size = 512;
+        const int total_size = output_size * 2;
 
         const int iterations = 10;
         const int result_size = 1;
@@ -258,38 +280,43 @@ BOOST_AUTO_TEST_CASE(queue_sum_test)
 
         try
         {
-            cl::CommandQueue queue = ProgramCache::getGlobalInstance().getDefaultCommandQueue();
+            cl::CommandQueue queue = ProgramCache::getGlobalInstance()
+                    .getDefaultCommandQueue();
             cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
-            initQueueSystem();
-
-            int host_in[input_size];
-            int host_out[output_size];
+            int host_queue_data[total_size];
             int host_result[result_size];
 
-            std::fill(host_in, host_in + input_size, 1);
-            std::fill(host_out, host_out + output_size, 0);
+            std::fill(host_queue_data, host_queue_data + input_size, 1);
+            std::fill(host_queue_data + input_size,
+                      host_queue_data + total_size, 0);
 
-            cl::Buffer device_in(context, CL_TRUE, input_size_bytes);
-            queue.enqueueWriteBuffer(device_in, CL_TRUE, 0, input_size_bytes, host_in);
 
-            cl::Buffer device_out(context, CL_TRUE, output_size_bytes);
-            queue.enqueueWriteBuffer(device_out, CL_TRUE, 0, output_size_bytes, host_out);
+            cl::Buffer device_queue_data(context, CL_TRUE,
+                                         sizeof(host_queue_data));
+            queue.enqueueWriteBuffer(device_queue_data, CL_TRUE, 0, sizeof(host_queue_data), host_queue_data);
 
-            // initialize queue
-            initQueue(device_in, input_size, device_out, output_size);
+            cl::Buffer device_queue_metadata;
+
+            // initialize queue metadata buffer
+            initQueueMetadata(input_size, total_size, device_queue_metadata);
+
+
 
             cl::Buffer device_result(context, CL_TRUE, result_size_bytes);
 
             std::cout << "parallel sum..." << std::endl;
             //dequeueTest(device_result);
-            sumTest(device_result, iterations);
+            sumTest(device_queue_data, device_queue_metadata,
+                    device_result, iterations);
 
-            queue.enqueueReadBuffer(device_result, CL_TRUE, 0, result_size_bytes, host_result);
+            queue.enqueueReadBuffer(device_result, CL_TRUE, 0,
+                                    result_size_bytes, host_result);
 
             for(int i = 0; i < result_size; ++i)
             {
-                std::cout << "result[" << i << "] = " << host_result[i] << std::endl;
+                std::cout << "result[" << i << "] = "
+                          << host_result[i] << std::endl;
             }
         }
         catch (cl::Error err)
@@ -300,6 +327,8 @@ BOOST_AUTO_TEST_CASE(queue_sum_test)
         std::cout << "sum queue test finished" << std::endl;
     }
 }
+
+
 
 
 BOOST_AUTO_TEST_CASE(big_local_queues_test)
@@ -314,6 +343,7 @@ BOOST_AUTO_TEST_CASE(big_local_queues_test)
 
         const int input_size = 512;
         const int output_size = 512;
+        const int total_size = output_size * 2;
         //const int result_size = 512;
 
         const int iterations = 1;
@@ -327,26 +357,42 @@ BOOST_AUTO_TEST_CASE(big_local_queues_test)
                                                     .getDefaultCommandQueue();
             cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
-            initQueueSystem();
+            int host_queue_data[total_size];
+            //int host_result[result_size];
 
-            int host_in[input_size];
-            int host_out[output_size];
+            std::fill(host_queue_data, host_queue_data + input_size, 1);
+            std::fill(host_queue_data + input_size,
+                      host_queue_data + total_size, 0);
 
-            std::fill(host_in, host_in + input_size, 1);
-            std::fill(host_out, host_out + output_size, 0);
+            cl::Buffer device_queue_data(context, CL_TRUE,
+                                         sizeof(host_queue_data));
+            queue.enqueueWriteBuffer(device_queue_data, CL_TRUE, 0, sizeof(host_queue_data), host_queue_data);
 
-            cl::Buffer device_in(context, CL_TRUE, input_size_bytes);
-            queue.enqueueWriteBuffer(device_in, CL_TRUE,
-                                     0, input_size_bytes, host_in);
+           cl::Buffer device_queue_metadata;
 
-            cl::Buffer device_out(context, CL_TRUE, output_size_bytes);
-            queue.enqueueWriteBuffer(device_out, CL_TRUE,
-                                     0, output_size_bytes, host_out);
+            // initialize queue metadata buffer
+            initQueueMetadata(input_size, total_size, device_queue_metadata);
+
+
+//            int host_in[input_size];
+//            int host_out[output_size];
+
+//            std::fill(host_in, host_in + input_size, 1);
+//            std::fill(host_out, host_out + output_size, 0);
+
+//            cl::Buffer device_in(context, CL_TRUE, input_size_bytes);
+//            queue.enqueueWriteBuffer(device_in, CL_TRUE,
+//                                     0, input_size_bytes, host_in);
+
+//            cl::Buffer device_out(context, CL_TRUE, output_size_bytes);
+//            queue.enqueueWriteBuffer(device_out, CL_TRUE,
+//                                     0, output_size_bytes, host_out);
 
             // initialize queue
-            initQueue(device_in, input_size, device_out, output_size);
+         //   initQueue(device_in, input_size, device_out, output_size);
 
-            bigLocalQueuesTest(iterations);
+            bigLocalQueuesTest(device_queue_data, device_queue_metadata,
+                               iterations);
 
         }
         catch (cl::Error err)

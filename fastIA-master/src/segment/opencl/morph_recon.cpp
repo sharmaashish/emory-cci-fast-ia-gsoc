@@ -63,44 +63,51 @@ void morphReconInit(cl::Buffer marker, cl::Buffer mask,
     cl::NDRange local(RECON_INIT_THREADS_X, RECON_INIT_THREADS_Y);
 
     int global_x = RECON_INIT_THREADS_X;
-    int global_y = (height + RECON_INIT_THREADS_Y - 1 / RECON_INIT_THREADS_Y)
+    int global_y = ((height + RECON_INIT_THREADS_Y - 1) / RECON_INIT_THREADS_Y)
                                                         * RECON_INIT_THREADS_Y;
     cl::NDRange global(global_x, global_y);
+
+#ifdef DEBUG_PRINT
+    std::cout << "global_x: " << global_x
+              <<", global_y: " << global_y << std::endl;
+#endif
 
     cl_int status = queue.enqueueNDRangeKernel(scan_forward_rows_kernel,
                                                cl::NullRange, global, local);
 }
 
 
-
-
-
-void morphRecon(cl::Buffer input_list, int dataElements, cl::Buffer seeds,
-                cl::Buffer image, int ncols, int nrows,
+void morphRecon(cl::Buffer inputQueueData, int dataElements, int queueSize,
+                cl::Buffer seeds, cl::Buffer image, int ncols, int nrows,
                 ProgramCache &cache, cl::CommandQueue &queue)
 {
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
-    initQueueSystem(queue); /* initializing queue */
+//    initQueueSystem(queue); /* initializing queue */
 
-    int output_buffer_size = 512;
-    cl::Buffer output_buffer(context, CL_TRUE,
-                             sizeof(int) * output_buffer_size);
+//    int output_buffer_size = 512;
+//    cl::Buffer output_buffer(context, CL_TRUE,
+//                             sizeof(int) * output_buffer_size);
 
-    initQueue(input_list, dataElements, output_buffer, output_buffer_size,
-              cache, queue);
+//    initQueue(input_list, dataElements, output_buffer, output_buffer_size,
+//              cache, queue);
+
+    cl::Buffer device_queue_metadata;
+
+    // initialize queue metadata buffer
+    initQueueMetadata(dataElements, queueSize, device_queue_metadata, queue);
 
     std::stringstream params_stream;
     params_stream << "-DQUEUE_MAX_NUM_BLOCKS=" << QUEUE_MAX_NUM_BLOCKS;
     params_stream << " -DQUEUE_NUM_THREADS=" << QUEUE_NUM_THREADS;
-    params_stream << " -Werror";
+   // params_stream << " -Werror";
 //    params_stream << " -cl-opt-disable";
 
 
     std::string program_params = params_stream.str();
 
-    std::cout << "parallel queue-based morphological reconstruction "
-                 "ocl program params: " << program_params << std::endl;
+ //   std::cout << "parallel queue-based morphological reconstruction "
+   //              "ocl program params: " << program_params << std::endl;
 
     std::vector<std::string> sources;
     sources.push_back("ParallelQueue");
@@ -128,12 +135,13 @@ void morphRecon(cl::Buffer input_list, int dataElements, cl::Buffer seeds,
     morph_recon_kernel.setArg(2, image);
     morph_recon_kernel.setArg(3, ncols);
     morph_recon_kernel.setArg(4, nrows);
-    morph_recon_kernel.setArg(5, queue_workspace);
-    morph_recon_kernel.setArg(6, local_queue);
-    morph_recon_kernel.setArg(7, reduction_buffer);
-    morph_recon_kernel.setArg(8, got_work);
-    morph_recon_kernel.setArg(9, prefix_sum_input);
-    morph_recon_kernel.setArg(10, prefix_sum_output);
+    morph_recon_kernel.setArg(5, inputQueueData);
+    morph_recon_kernel.setArg(6, device_queue_metadata);
+    morph_recon_kernel.setArg(7, local_queue);
+    morph_recon_kernel.setArg(8, reduction_buffer);
+    morph_recon_kernel.setArg(9, got_work);
+    morph_recon_kernel.setArg(10, prefix_sum_input);
+    morph_recon_kernel.setArg(11, prefix_sum_output);
 
     cl::NDRange global(QUEUE_NUM_THREADS, 1);
     cl::NDRange local(QUEUE_NUM_THREADS, 1);
@@ -146,5 +154,5 @@ void morphRecon(cl::Buffer input_list, int dataElements, cl::Buffer seeds,
     cl_int status = queue.enqueueNDRangeKernel(morph_recon_kernel,
                                                cl::NullRange, global, local);
 
-    disposeQueueSystem();
+//    disposeQueueSystem();
 }

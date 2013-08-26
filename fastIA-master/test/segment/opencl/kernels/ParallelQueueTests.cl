@@ -1,6 +1,6 @@
 #define DEBUG
 
-__kernel void dequeue_test(QUEUE_WORKSPACE,
+__kernel void dequeue_test(QUEUE_DATA, QUEUE_METADATA,
                         __global int* device_result,
                         __local int* gotWork)
 {
@@ -8,15 +8,16 @@ __kernel void dequeue_test(QUEUE_WORKSPACE,
     int group_id = get_group_id(0);
     int group_size = get_local_size(0);
 
-    setCurrentQueue(QUEUE_WORKSPACE_ARG, group_id, group_id);
+//    setCurrentQueue(QUEUE_WORKSPACE_ARG, group_id, group_id);
 
     int loopIt = 0;
-    int workUnit = dequeueElement(QUEUE_WORKSPACE_ARG, &loopIt, gotWork);
+    int workUnit = dequeueElement(queue_data, queue_metadata,
+                                  &loopIt, gotWork);
 
     device_result[group_id * group_size + local_id] = workUnit;
 }
 
-
+/*
 // reduction_buffer size should be size of block
 __kernel void partial_sum_test(QUEUE_WORKSPACE,
                                __global int* output_sum, int iterations,
@@ -61,9 +62,9 @@ __kernel void partial_sum_test(QUEUE_WORKSPACE,
     // WRITING FINAL RESULT TO GLOBAL MEMORY
     if(tid < iterations)
         output_sum[blockIdx * iterations + tid] = partial_sum;
-}
+}*/
 
-__kernel void sum_test(QUEUE_WORKSPACE,
+__kernel void sum_test(QUEUE_DATA, QUEUE_METADATA,
                        __global int* output_sum, int iterations,
                        __local int *local_queue,
                        __local int *reduction_buffer,
@@ -77,7 +78,7 @@ __kernel void sum_test(QUEUE_WORKSPACE,
     int blockDim = get_local_size(0);
     int tid = get_local_id(0);
 
-    setCurrentQueue(QUEUE_WORKSPACE_ARG, blockIdx, blockIdx);
+  //  setCurrentQueue(QUEUE_WORKSPACE_ARG, blockIdx, blockIdx);
 
     int loopIt = 0;
     int workUnit = -1;
@@ -88,7 +89,8 @@ __kernel void sum_test(QUEUE_WORKSPACE,
         local_queue[tid * 2] = 0;
 
         // Try to get some work.
-        workUnit = dequeueElement(QUEUE_WORKSPACE_ARG, &loopIt, gotWork);
+        workUnit = dequeueElement(queue_data, queue_metadata,
+                                                &loopIt, gotWork);
 
         // PREPARING NEXT DATA PART FROM QUEUE TO REDUCTION
         reduction_buffer[tid] = (workUnit < 0 ? 0 : workUnit);
@@ -114,7 +116,7 @@ __kernel void sum_test(QUEUE_WORKSPACE,
 
         // PUTTING SUM TO GLOBAL QUEUE
         if(i != iterations - 1)
-            queueElement(QUEUE_WORKSPACE_ARG, local_queue + tid*2,
+            queueElement(queue_data, queue_metadata, local_queue + tid*2,
                                     prefix_sum_input, prefix_sum_output);
     }
 
@@ -125,7 +127,7 @@ __kernel void sum_test(QUEUE_WORKSPACE,
 
 
 /* local queue with capacity = 4 is expected */
-__kernel void big_local_queues_test(QUEUE_WORKSPACE,
+__kernel void big_local_queues_test(QUEUE_DATA, QUEUE_METADATA,
                        int iterations,
                        __local int* local_queue,
                        __local int* gotWork,
@@ -138,7 +140,7 @@ __kernel void big_local_queues_test(QUEUE_WORKSPACE,
     int blockDim = get_local_size(0);
     int tid = get_local_id(0);
 
-    setCurrentQueue(QUEUE_WORKSPACE_ARG, blockIdx, blockIdx);
+   // setCurrentQueue(QUEUE_WORKSPACE_ARG, blockIdx, blockIdx);
 
     int loopIt = 0;
     int workUnit = -1;
@@ -147,7 +149,7 @@ __kernel void big_local_queues_test(QUEUE_WORKSPACE,
 
     for(int i = 0; i < iterations; ++i)
     {
-        /* storing elements int queue */
+        // storing elements int queue
         my_local_queue[0] = 1;//tid & 0x3 + ((tid >> 4) & 0x1);
 
         assert(my_local_queue[0] < 5);
@@ -157,8 +159,8 @@ __kernel void big_local_queues_test(QUEUE_WORKSPACE,
         my_local_queue[3] = tid;
         my_local_queue[4] = blockIdx * blockDim * tid;
 
-        queueElement(QUEUE_WORKSPACE_ARG, my_local_queue, prefix_sum_input,
-                                                            prefix_sum_output);
+        queueElement(queue_data, queue_metadata,
+                        my_local_queue, prefix_sum_input, prefix_sum_output);
 
    //     // Try to get some work.
    //     for(int k = 0; k < 4; ++k)

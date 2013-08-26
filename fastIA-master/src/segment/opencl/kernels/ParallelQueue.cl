@@ -14,7 +14,7 @@
         #define assert(X)
         //#define printf(fmt, ...)
 #endif
-
+/*
 #define IN_QUEUE_SIZE_OFFSET      (0)
 #define IN_QUEUE_PTR_1_OFFSET     (sizeof(int) * QUEUE_MAX_NUM_BLOCKS)
 #define IN_QUEUE_HEAD_OFFSET      (sizeof(int*) * QUEUE_MAX_NUM_BLOCKS + IN_QUEUE_PTR_1_OFFSET)
@@ -25,31 +25,36 @@
 #define CUR_OUT_QUEUE_OFFSET      (sizeof(int*) * QUEUE_MAX_NUM_BLOCKS + CUR_IN_QUEUE_OFFSET)
 #define EXECUTION_CODE_OFFSET     (sizeof(int*) * QUEUE_MAX_NUM_BLOCKS + CUR_OUT_QUEUE_OFFSET)
 #define TOTAL_INSERTS_OFFSET      (sizeof(int) + EXECUTION_CODE_OFFSET)
+*/
+#define IN_QUEUE_SIZE         ((__global int*)(queue_metadata))
+#define IN_QUEUE_OFFSET       ((__global int*)(queue_metadata + 1))
+#define IN_QUEUE_HEAD         ((__global int*)(queue_metadata + 2))
+#define OUT_QUEUE_MAX_SIZE    ((__global int*)(queue_metadata + 3))
+#define OUT_QUEUE_HEAD        ((__global int*)(queue_metadata + 4))
+#define OUT_QUEUE_OFFSET      ((__global int*)(queue_metadata + 5))
+#define CURR_IN_QUEUE_OFFSET  ((__global int*)(queue_metadata + 6))
+#define CURR_OUT_QUEUE_OFFSET ((__global int*)(queue_metadata + 7))
+#define TOTAL_INSERTS         ((__global int*)(queue_metadata + 8))
+#define EXECUTION_CODE        ((__global int*)(queue_metadata + 9))
 
-#define IN_QUEUE_SIZE         ((__global int*)(queue_workspace + IN_QUEUE_SIZE_OFFSET))
-#define IN_QUEUE_PTR_1        ((__global int* __global*)(queue_workspace + IN_QUEUE_PTR_1_OFFSET))
-#define IN_QUEUE_HEAD         ((__global int*)(queue_workspace + IN_QUEUE_HEAD_OFFSET))
-#define OUT_QUEUE_MAX_SIZE    ((__global int*)(queue_workspace + OUT_QUEUE_MAX_SIZE_OFFSET))
-#define OUT_QUEUE_HEAD        ((__global int*)(queue_workspace + OUT_QUEUE_HEAD_OFFSET))
-#define OUT_QUEUE_PTR_2       ((__global int* __global*)(queue_workspace + OUT_QUEUE_PTR_2_OFFSET))
-#define CUR_IN_QUEUE          ((__global int* __global*)(queue_workspace + CUR_IN_QUEUE_OFFSET))
-#define CUR_OUT_QUEUE         ((__global int* __global*)(queue_workspace + CUR_OUT_QUEUE_OFFSET))
-#define EXECUTION_CODE        (((__global int*)(queue_workspace + EXECUTION_CODE_OFFSET))[0])
-#define TOTAL_INSERTS         ((__global int*)(queue_workspace + TOTAL_INSERTS_OFFSET))
 
-#define QUEUE_WORKSPACE       __global char* queue_workspace
-#define QUEUE_WORKSPACE_ARG   queue_workspace
+//#define QUEUE_WORKSPACE       __global char* queue_workspace
+//#define QUEUE_WORKSPACE_ARG   queue_workspace
 
+#define QUEUE_DATA            __global int* queue_data
+#define QUEUE_METADATA        __global int* queue_metadata
+
+/*
 void setCurrentQueue(QUEUE_WORKSPACE, int currentQueueIdx, int queueIdx)
 {
     CUR_IN_QUEUE[currentQueueIdx] = IN_QUEUE_PTR_1[queueIdx];
     CUR_OUT_QUEUE[currentQueueIdx] = OUT_QUEUE_PTR_2[queueIdx];
 
     //printf("setting current queue, thread %d\n", get_local_id(0));
-}
+}*/
 
 // Makes queue 1 point to queue 2, and vice-versa
-void swapQueues(QUEUE_WORKSPACE, int loopIt){
+void swapQueues(QUEUE_METADATA, int loopIt){
 
     barrier(CLK_GLOBAL_MEM_FENCE);
 
@@ -58,8 +63,9 @@ void swapQueues(QUEUE_WORKSPACE, int loopIt){
 
     if(loopIt %2 == 0)
     {
-        CUR_IN_QUEUE[group_id] = OUT_QUEUE_PTR_2[group_id];
-        CUR_OUT_QUEUE[group_id] = IN_QUEUE_PTR_1[group_id];
+        CURR_IN_QUEUE_OFFSET[group_id] = OUT_QUEUE_OFFSET[group_id];
+        CURR_OUT_QUEUE_OFFSET[group_id] = IN_QUEUE_OFFSET[group_id];
+
         if(local_id == 0)
         {
             IN_QUEUE_SIZE[group_id] = OUT_QUEUE_HEAD[group_id];
@@ -71,8 +77,8 @@ void swapQueues(QUEUE_WORKSPACE, int loopIt){
     }
     else
     {
-        CUR_IN_QUEUE[group_id] = IN_QUEUE_PTR_1[group_id];
-        CUR_OUT_QUEUE[group_id] = OUT_QUEUE_PTR_2[group_id];
+        CURR_IN_QUEUE_OFFSET[group_id] = IN_QUEUE_OFFSET[group_id];
+        CURR_OUT_QUEUE_OFFSET[group_id] = OUT_QUEUE_OFFSET[group_id];
 
         if(local_id == 0)
         {
@@ -85,13 +91,11 @@ void swapQueues(QUEUE_WORKSPACE, int loopIt){
     }
 
     barrier(CLK_GLOBAL_MEM_FENCE);
-
-    printf("swapping queues\n");
 }
 
 
 // -2, nothing else to be done at all
-int dequeueElement(QUEUE_WORKSPACE, int *loopIt, __local volatile int* gotWork)
+int dequeueElement(QUEUE_DATA, QUEUE_METADATA, int *loopIt, __local volatile int* gotWork)
 {
     int threadIdx = get_local_id(0);
     int blockIdx = get_group_id(0);
@@ -105,13 +109,13 @@ getWork:
         barrier(CLK_LOCAL_MEM_FENCE);
 
         if(get_local_id(0) == 0){
-            IN_QUEUE_HEAD[blockIdx] += threadIdx;
+            IN_QUEUE_HEAD[blockIdx] += get_local_size(0);
         }
 
         // Nothing to do by default
         int element = -1;
         if(queue_index < IN_QUEUE_SIZE[blockIdx]){
-            element = CUR_IN_QUEUE[blockIdx][queue_index];
+            element = queue_data[CURR_IN_QUEUE_OFFSET[blockIdx] + queue_index];
             *gotWork = 1;
         }
         barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
@@ -120,7 +124,7 @@ getWork:
         if(!*gotWork){
             element = -2;
             if(OUT_QUEUE_HEAD[blockIdx] != 0){
-                swapQueues(QUEUE_WORKSPACE_ARG, loopIt[0]);
+                swapQueues(queue_metadata, loopIt[0]);
                 loopIt[0]++;
                 goto getWork;
             }
@@ -180,11 +184,13 @@ void scan(__local const int* prefix_sum_input,
 
 // Assuming that all threads in a block are calling this function
 // prefix sum input, prefix_sum_output - size should be equal to QUEUE_NUM_THREADS
-int queueElement(QUEUE_WORKSPACE,
+int queueElement(QUEUE_DATA, QUEUE_METADATA,
                  __local int *elements,
                  __local int* prefix_sum_input,
                  __local int* prefix_sum_output)
 {
+    //printf("queue!\n");
+
     int threadIdx = get_local_id(0);
     int blockIdx = get_group_id(0);
 
@@ -199,20 +205,22 @@ int queueElement(QUEUE_WORKSPACE,
     // calculate index into the queue where given thread is writing
     int queue_index = global_queue_index + prefix_sum_output[threadIdx];
 
-    assert(elements[0] >= 0 && elements[0] <= 4);
+ /*   assert(elements[0] >= 0 && elements[0] <= 4);
     assert(prefix_sum_output[threadIdx] <= 4 * QUEUE_NUM_THREADS);
 
     assert(prefix_sum_output[QUEUE_NUM_THREADS-1]
-            + prefix_sum_input[QUEUE_NUM_THREADS-1] == 512);
+            + prefix_sum_input[QUEUE_NUM_THREADS-1] == 512);*/
 
     for(int i = 0; i < elements[0]; i++)
     {
 //        // If the queue storage has been exceed, than set the execution code to 1.
 //        // This will force a second round in the morphological reconstructio.
-//        if(queue_index + i >= OUT_QUEUE_MAX_SIZE[blockIdx])
-//            i == i;//EXECUTION_CODE = 1;
-//        else
-            CUR_OUT_QUEUE[blockIdx][queue_index + i] = elements[i + 1];
+       if(queue_index + i >= OUT_QUEUE_MAX_SIZE[blockIdx])
+            EXECUTION_CODE[0] = 1;
+        else
+            queue_data[CURR_OUT_QUEUE_OFFSET[blockIdx] + queue_index + i]
+                                                            = elements[i + 1];
+        //CUR_OUT_QUEUE[blockIdx][queue_index + i] = elements[i + 1];
     }
 
     // thread 0 updates head of the queue
@@ -230,6 +238,7 @@ int queueElement(QUEUE_WORKSPACE,
     return queue_index;
 }
 
+/*
 __kernel void init_queue_kernel(QUEUE_WORKSPACE,
                                 __global int* inQueueData, int dataElements,
                                 __global int* outQueueData, int outMaxSize)
@@ -255,8 +264,9 @@ __kernel void init_queue_kernel(QUEUE_WORKSPACE,
         //Head of the in queue
         IN_QUEUE_HEAD[0] = 0;
     }
-}
+}*/
 
+/*
 __kernel void init_queue_id_kernel(QUEUE_WORKSPACE,
                                 __global int* inQueueData, int dataElements,
                                 __global int* outQueueData, int outMaxSize,
@@ -284,13 +294,14 @@ __kernel void init_queue_id_kernel(QUEUE_WORKSPACE,
         IN_QUEUE_HEAD[queue_id] = 0;
     }
 }
-
+*/
 
 
 /* __global void* argument type is workaround, function parameter
  *  of type __global int* __global* causes compilation fail without
  *  generating any explanation
  */
+ /*
 __kernel void init_queue_vector_kernel(QUEUE_WORKSPACE,
                                        __global void* inQueueData,
                                        __global int* dataElements,
@@ -326,3 +337,4 @@ __kernel void init_queue_vector_kernel(QUEUE_WORKSPACE,
         IN_QUEUE_HEAD[idx] = 0;
     }
 }
+*/
