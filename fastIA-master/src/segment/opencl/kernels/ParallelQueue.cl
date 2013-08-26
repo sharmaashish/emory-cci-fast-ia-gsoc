@@ -1,7 +1,7 @@
 /*
     QUEUE_MAX_NUM_BLOCKS, QUEUE_NUM_THREADS <-- should be passed when program is build
 */
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 #define assert(x) \

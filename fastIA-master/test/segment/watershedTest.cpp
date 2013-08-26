@@ -17,7 +17,7 @@
 #include "Logger.h"
 #include <stdio.h>
 
-
+ 
 #if defined (WITH_CUDA)
 #include "opencv2/gpu/gpu.hpp"
 #include "opencv2/gpu/stream_accessor.hpp"
@@ -27,9 +27,10 @@ using namespace cv;
 using namespace cv::gpu;
 
 BOOST_AUTO_TEST_CASE(watershed_test_1)
-{   
+{
     std::vector<std::string> segfiles;
-    segfiles.push_back(DATA_IN("tissue.png"));
+    segfiles.push_back(DATA_IN("microscopy/in-imrecon-gray-mask.png"));
+//  segfiles.push_back(DATA_IN("tissue.png"));
 //	segfiles.push_back(std::string("/home/tcpan/PhD/path/Data/seg-validate-cpu/astroII.1/astroII.1.ndpi-0000008192-0000008192-15.mask.pbm"));
 //	segfiles.push_back(std::string("/home/tcpan/PhD/path/Data/seg-validate-cpu/gbm2.1/gbm2.1.ndpi-0000004096-0000004096-15.mask.pbm"));
 //	segfiles.push_back(std::string("/home/tcpan/PhD/path/Data/seg-validate-cpu/normal.3/normal.3.ndpi-0000028672-0000012288-15.mask.pbm"));
@@ -38,7 +39,8 @@ BOOST_AUTO_TEST_CASE(watershed_test_1)
 
 	std::vector<std::string> imgfiles;
     
-    imgfiles.push_back(DATA_IN("tissue.png"));
+    imgfiles.push_back(DATA_IN("microscopy/in-imrecon-gray-marker.png"));
+//  imgfiles.push_back(DATA_IN("tissue.png"));
 //	imgfiles.push_back(std::string("/home/tcpan/PhD/path/Data/ValidationSet/20X_4096x4096_tiles/astroII.1/astroII.1.ndpi-0000008192-0000008192.tif"));
 //	imgfiles.push_back(std::string("/home/tcpan/PhD/path/Data/ValidationSet/20X_4096x4096_tiles/gbm2.1/gbm2.1.ndpi-0000004096-0000004096.tif"));
 //	imgfiles.push_back(std::string("/home/tcpan/PhD/path/Data/ValidationSet/20X_4096x4096_tiles/normal.3/normal.3.ndpi-0000028672-0000012288.tif"));
@@ -118,6 +120,24 @@ BOOST_AUTO_TEST_CASE(watershed_test_1)
     //	cvtColor(dist5, nuclei, CV_GRAY2BGR);
         img.copyTo(nuclei, seg_big);
     
+        printf("nuclei channels %d\n", nuclei.channels());
+        printf("seg_big channels %d\n", seg_big.channels());
+        
+        nuclei.convertTo(nuclei, CV_8UC1);
+        
+        
+        std::vector<cv::Mat> channels;
+    
+        channels.push_back(nuclei);
+        channels.push_back(nuclei);
+        channels.push_back(nuclei);
+        
+        cv::Mat fin_img;
+        
+        cv::merge(channels, fin_img);
+        
+        nuclei = fin_img;
+        
         t1 = cci::common::event::timestampInUS();
     
         // watershed in openCV requires labels.  input foreground > 0, 0 is background

@@ -69,7 +69,11 @@ __kernel void scan_forward_rows_kernel(__global int* marker,
                 changed |= marker_val ^ marker_new;
             }
         }
-printf("back to global\n");
+#ifdef DEBUG_PRINT
+
+        printf("back to global\n");
+#endif
+
         barrier(CLK_LOCAL_MEM_FENCE);
 
         marker[idx_global] = marker_local[idx_local];
@@ -77,9 +81,9 @@ printf("back to global\n");
 
         barrier(CLK_LOCAL_MEM_FENCE);
     }
-
+#ifdef DEBUG_PRINT
     printf("changed %d\n", changed);
-
+#endif
     if(changed)
         changed_global = 1;
 }

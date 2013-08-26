@@ -5,38 +5,55 @@
 void oclSimpleInit(cl_device_type type,
                    cl::Context& context, std::vector<cl::Device>& devices)
 {
-    std::vector<cl::Platform> platforms;
-    cl_int err = CL_SUCCESS;
+    try{
 
-    cl::Platform::get(&platforms);
+        std::vector<cl::Platform> platforms;
+        cl_int err = CL_SUCCESS;
 
-    if (!platforms.size())
+        cl::Platform::get(&platforms);
+
+        if (!platforms.size())
+        {
+            std::cout << "Platform size 0" << std::endl;
+        }
+        else
+        {
+            std::cout << "Platforms size: " << platforms.size() << std::endl;
+            std::string platform_name = platforms[0].getInfo<CL_PLATFORM_NAME>();
+
+            std::cout << "Platform name: " << platform_name << std::endl;
+            std::cout << "Platform name: "
+                      << platforms[0].getInfo<CL_PLATFORM_NAME>() << std::endl;
+        }
+
+
+
+        cl_context_properties properties[] =
+        {CL_CONTEXT_PLATFORM, (cl_context_properties)(platforms[0])(), 0};
+
+        context = cl::Context(type, properties, NULL, NULL, &err);
+
+        //std::cout << (err == CL_SUCCESS ? "true" : "false") << std::endl;
+
+        int num_devices = context.getInfo<CL_CONTEXT_NUM_DEVICES>();
+
+        std::cout << "num devices: " << num_devices << std::endl;
+
+        devices = context.getInfo<CL_CONTEXT_DEVICES>();
+
+        for(int i = 0; i < devices.size(); ++i){
+
+            cl::Device& device = devices[i];
+
+            std::cout << device.getInfo<CL_DEVICE_NAME>() << std::endl;
+
+        }
+    }
+    catch (cl::Error err)
     {
-        std::cout << "Platform size 0" << std::endl;
-    }
-    else
-    {
-        std::cout << "Platforms size: " << platforms.size() << std::endl;    
-        std::cout << "Platform name: "
-                  << platforms[0].getInfo<CL_PLATFORM_NAME>() << std::endl;
+        oclPrintError(err);
     }
 
-    cl_context_properties properties[] =
-    {CL_CONTEXT_PLATFORM, (cl_context_properties)(platforms[0])(), 0};
-
-    context = cl::Context(type, properties, NULL, NULL, &err);
-    
-    //std::cout << (err == CL_SUCCESS ? "true" : "false") << std::endl;
-
-    devices = context.getInfo<CL_CONTEXT_DEVICES>();
-
-    for(int i = 0; i < devices.size(); ++i){
-
-        cl::Device& device = devices[i];
-
-        std::cout << device.getInfo<CL_DEVICE_NAME>() << std::endl;
-
-    }
 
 }
 
