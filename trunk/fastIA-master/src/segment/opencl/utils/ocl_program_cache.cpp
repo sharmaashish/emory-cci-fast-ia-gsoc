@@ -123,10 +123,10 @@ ProgramCache ProgramCache::globalCacheInitialization()
 
     oclSimpleInit(CL_DEVICE_TYPE_ALL, context, devices);
 
-    cl::Device device = devices[0];
-
     std::cout << "devices count: "
               << devices.size() << std::endl;
+
+    cl::Device device = devices[0];
 
     return ProgramCache(context, device);
 }
