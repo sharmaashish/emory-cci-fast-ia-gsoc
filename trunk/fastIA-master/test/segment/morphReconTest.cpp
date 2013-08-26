@@ -12,6 +12,8 @@
 
 #include "opencl/morph_recon.h"
 
+#define ITER_NUM 1000
+
 /*
  * runtime parameter --catch_system_errors=no  is needed if there is no gpu
  * (opencl internally invokes subprocess that return non-zero value)
@@ -19,7 +21,7 @@
 
 BOOST_AUTO_TEST_CASE(morphReconstruction)
 {
-    for(int i = 0; i < 100; ++i)
+    for(int i = 0; i < ITER_NUM; ++i)
     {
         const unsigned char host_image[] = {
             //       4           8           12          16          20          24          28          32
@@ -123,9 +125,16 @@ BOOST_AUTO_TEST_CASE(morphReconstruction)
 
         cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
-        cl::Buffer device_input_list(context, CL_TRUE, sizeof(host_input_list));
-        queue.enqueueWriteBuffer(device_input_list, CL_TRUE, 0,
-                                 sizeof(host_input_list), host_input_list);
+        int queue_size = 1024;
+
+        cl::Buffer device_queue(context, CL_TRUE, sizeof(int) * queue_size);
+
+        //cl::Buffer device_input_list(context, CL_TRUE, sizeof(host_input_list));
+        //queue.enqueueWriteBuffer(device_input_list, CL_TRUE, 0,
+          //                       sizeof(host_input_list), host_input_list);
+
+        queue.enqueueWriteBuffer(device_queue, CL_TRUE, 0,
+                               sizeof(host_input_list), host_input_list);
 
         cl::Buffer device_seeds(context, CL_TRUE, sizeof(host_seeds));
         queue.enqueueWriteBuffer(device_seeds, CL_TRUE, 0,
@@ -136,7 +145,7 @@ BOOST_AUTO_TEST_CASE(morphReconstruction)
                                  sizeof(host_image), host_image);
 
         /* running morphological reconstruction kernel */
-        morphRecon(device_input_list, data_elements,
+        morphRecon(device_queue, data_elements, queue_size,
                    device_seeds, device_image, ncols, nrows);
 
 
