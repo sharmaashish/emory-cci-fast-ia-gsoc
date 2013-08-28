@@ -1,5 +1,7 @@
 #define LOCAL_QUEUE_SIZE 5
 
+#define DEBUG_PRINT
+
 inline int propagate(__global int* seeds, __global uchar* image,
                      int x, int y, int ncols, uchar pval)
 {
@@ -29,60 +31,74 @@ __kernel void scan_forward_rows_kernel(__global int* marker,
     int local_id_x = get_local_id(0);
     int local_id_y = get_local_id(1);
 
+    int global_id_y = get_global_id(1);
+
     int group_size_x = get_local_size(0);
     int group_size_y = get_local_size(1);
 
-    int group_id = get_group_id(0);
+    int group_id_y = get_group_id(1);
+
 
     // load from global to local
-
-    int row = group_id * group_size_y + local_id_y;
+    int row = global_id_y * width;
 
     int idx_local = local_id_y * group_size_x + local_id_x;
 
     int step = group_size_x - 1;
     int changed = 0;
 
-    for(int i = local_id_x; i < width; i += step)
+    int limit = ((width - group_size_x + step) / step)
+                * step + group_size_x;
+
+  //  printf("limit %d\n", limit);
+
+    // all threads performs the same number of times
+    for(int i = local_id_x; i < limit; i += step)
     {
         int idx_global = row + i;
 
-        marker_local[idx_local] = marker[idx_global];
-        mask_local[idx_local] = mask[idx_global];
+        if(i < width && global_id_y < height)
+        {
+            marker_local[idx_local] = marker[idx_global];
+            mask_local[idx_local] = mask[idx_global];
+        }
 
         barrier(CLK_LOCAL_MEM_FENCE);
 
         if(local_id_x == 0)
         {
-            for(int col = 0; i < group_size_x - 1
-                        && idx_global + col < width; ++i)
+            for(int col = 0; col < step
+                        && i + col < width; ++col)
             {
-                int marker_val = marker_local[col];
-                int mask_val = mask_local[col];
+                int local_idx_base = local_id_y * group_size_x;
+
+                int marker_val = marker_local[local_idx_base + col];
+                int mask_val = mask_local[local_idx_base + col];
 
                 int marker_forward_val = idx_global + col + 1 < width
-                                            ? marker_local[col+1] : 0;
+                                            ? marker_local[local_idx_base + col + 1] : 0;
 
                 int marker_new = min(max(marker_val, marker_forward_val),
                                      mask_val);
+
+                marker_local[local_idx_base + col] = marker_new;
 
                 changed |= marker_val ^ marker_new;
             }
         }
 #ifdef DEBUG_PRINT
-
-        printf("back to global\n");
+    //    printf("back to global\n");
 #endif
-
         barrier(CLK_LOCAL_MEM_FENCE);
 
-        marker[idx_global] = marker_local[idx_local];
-        //mask[idx_global] = mask_local[idx_local];
-
+        if(i < width && global_id_y < height)
+        {
+            marker[idx_global] = marker_local[idx_local];
+        }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 #ifdef DEBUG_PRINT
-    printf("changed %d\n", changed);
+ //   printf("changed %d\n", changed);
 #endif
     if(changed)
         changed_global = 1;
