@@ -296,7 +296,8 @@ void morphReconInitQueue(cl::Buffer marker, cl::Buffer mask,
     sources.push_back("ParallelQueue");
     sources.push_back("MorphRecon");
 
-    cl::Program& program = cache.getProgram(sources, morphReconParams);
+    cl::Program& program = cache.getProgram(sources, morphReconParams
+                              + morphReconTypeParams<MARKER_TYPE, MASK_TYPE>());
 
     morphReconInitQueue<MARKER_TYPE, MASK_TYPE>(marker, mask, queueData,
                                     width, height, queue_size, queue, program);
