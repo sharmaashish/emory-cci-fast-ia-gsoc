@@ -104,7 +104,7 @@ cl::Device& ProgramCache::getDevice()
 
 cl::CommandQueue& ProgramCache::getDefaultCommandQueue()
 {
-    return defaultCommandQueue;
+    return getGlobalInstance().defaultCommandQueue;
 }
 
 ProgramCache& ProgramCache::getGlobalInstance()

@@ -14,8 +14,9 @@ add_custom_command(
 
 set(cllibsrcs
     utils/ocl_utils.cpp
-    utils/ocl_program_cache
-    utils/ocl_source_registry
+    utils/ocl_program_cache.cpp
+    utils/ocl_source_registry.cpp
+    utils/ocl_type_resolver.cpp
     pixel-ops.cpp
     watershed.cpp
     parallel_queue.cpp
