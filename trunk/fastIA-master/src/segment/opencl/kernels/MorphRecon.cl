@@ -28,8 +28,8 @@ inline int propagate(__global MARKER_TYPE* marker, __global MASK_TYPE* mask,
 __kernel void scan_forward_rows_kernel(__global MARKER_TYPE* marker,
                                        __global MASK_TYPE* mask,
                                        __global int* changed_global,
-                                       __local int* marker_local,
-                                       __local int* mask_local,
+                                       __local MARKER_TYPE* marker_local,
+                                       __local MASK_TYPE* mask_local,
                                        int width, int height)
 {
     int local_id_x = get_local_id(0);
@@ -99,8 +99,8 @@ __kernel void scan_forward_rows_kernel(__global MARKER_TYPE* marker,
 __kernel void scan_backward_rows_kernel(__global MARKER_TYPE* marker,
                                        __global MASK_TYPE* mask,
                                        __global int* changed_global,
-                                       __local int* marker_local,
-                                       __local int* mask_local,
+                                       __local MARKER_TYPE* marker_local,
+                                       __local MASK_TYPE* mask_local,
                                        int width, int height)
 {
     int local_id_x = get_local_id(0);

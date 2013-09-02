@@ -206,7 +206,8 @@ void morphReconInitScan(cl::Buffer marker, cl::Buffer mask,
     sources.push_back("ParallelQueue");
     sources.push_back("MorphRecon");
 
-    cl::Program& program = cache.getProgram(sources, morphReconParams);
+    cl::Program& program = cache.getProgram(sources, morphReconParams
+                            + morphReconTypeParams<MARKER_TYPE, MASK_TYPE>());
 
     morphReconInitScan<MARKER_TYPE, MASK_TYPE>(marker, mask,
                                                width, height, queue, program);
@@ -405,7 +406,9 @@ void morphReconQueuePropagation(cl::Buffer queue_data, int data_elements,
     sources.push_back("ParallelQueue");
     sources.push_back("MorphRecon");
 
-    cl::Program& program = cache.getProgram(sources, morphReconParams);
+    cl::Program& program = cache.getProgram(sources, morphReconParams
+                             + morphReconTypeParams<MARKER_TYPE, MASK_TYPE>());
+
 
     morphReconQueuePropagation<MARKER_TYPE, MASK_TYPE>(queue_data,
        data_elements, queue_size, marker, mask, width, height, queue, program);
