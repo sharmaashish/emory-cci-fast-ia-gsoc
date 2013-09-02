@@ -14,7 +14,7 @@
 
 #include <cstdio>
 
-#define ITER_NUM 1
+#define ITER_NUM 1000
 
 //extern cl::Buffer queue_workspace;
 

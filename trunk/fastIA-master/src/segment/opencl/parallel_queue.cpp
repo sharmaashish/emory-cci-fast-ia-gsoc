@@ -3,26 +3,7 @@
 
 #include <iostream>
 
-cl::Buffer queue_workspace;
-
-void initQueueSystem(cl::CommandQueue& queue)
-{
-    cl::Device device = queue.getInfo<CL_QUEUE_DEVICE>();
-    int addressSize = device.getInfo<CL_DEVICE_ADDRESS_BITS>()/8;
-
-    int byteSize = 5 * sizeof(int) * QUEUE_MAX_NUM_BLOCKS
-            + 4 * addressSize * QUEUE_MAX_NUM_BLOCKS + sizeof(int);
-
-    cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
-    queue_workspace = cl::Buffer(context, CL_TRUE, byteSize);
-}
-
-void disposeQueueSystem()
-{
-    queue_workspace = cl::Buffer();
-}
-
-/* Structure of 'data' buffer:
+/** Structure of 'data' buffer:
  *
  * |#######-------------|--------------------|
  *
@@ -32,73 +13,70 @@ void disposeQueueSystem()
  * as an output buffer, input data can be stored only in first half
  * of buffer (in input queue).
  */
-
 void initQueueMetadata(int dataElements, int totalSize,
                        cl::Buffer& queueMetadata, cl::CommandQueue& queue)
 {
-    assert(!(totalSize & 1));
-    assert(dataElements <= totalSize / 2);
+
+    std::vector<int> dataElementsVec;
+    dataElementsVec.push_back(dataElements);
+
+    std::vector<int> totalSizes;
+    totalSizes.push_back(totalSize);
+
+    initQueueMetadata(dataElementsVec, totalSizes, queueMetadata, queue);
+}
+
+void initQueueMetadata(std::vector<int> &dataElements,
+                       std::vector<int> &totalSizes,
+                       cl::Buffer &queueMetadata, cl::CommandQueue &queue)
+{
+    assert(dataElements.size() == totalSizes.size());
 
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
-    int hostQueueMetadata[QUEUE_METATADATA_SIZE];
+    int size = dataElements.size();
+    const int single_queue_metadata_size = 10;
 
-    assert(QUEUE_METATADATA_SIZE == 10);
+    // extra element for global execution code
+    int total_size = single_queue_metadata_size * size + 1;
 
-    hostQueueMetadata[0] = dataElements; /* input data size */
-    hostQueueMetadata[1] = 0;            /* input queue offset */
-    hostQueueMetadata[2] = 0;            /* input queue head */
-    hostQueueMetadata[3] = totalSize;    /* input/output queue max size */
-    hostQueueMetadata[4] = 0;            /* output queue head */
-    hostQueueMetadata[5] = totalSize/2;  /* output offset */
-    hostQueueMetadata[6] = 0;            /* current input queue offset */
-    hostQueueMetadata[7] = totalSize/2;  /* current output queue offset */
-    hostQueueMetadata[8] = 0;            /* total inserts */
-    hostQueueMetadata[9] = 0;            /* execution code */
+    int* host_metadata = new int[total_size];
+    int offset = 0;
+
+    for(int i = 0; i < size; ++i)
+    {
+        int* ptr = host_metadata + single_queue_metadata_size * i;
+
+        int dataElem = dataElements[i];
+        int total_size = totalSizes[i];
+        int total_size_half = total_size / 2;
+
+        assert(total_size_half * 2 == total_size);
+        assert(dataElem <= total_size_half);
+
+        ptr[0] = dataElements[i];          /* input data size */
+        ptr[1] = offset;                   /* input queue offset */
+        ptr[2] = 0;                        /* input queue head */
+        ptr[3] = total_size;               /* input/output queue max size */
+        ptr[4] = 0;                        /* output queue head */
+        ptr[5] = offset + total_size_half; /* output offset */
+        ptr[6] = offset;                   /* current input queue offset */
+        ptr[7] = offset + total_size_half; /* current output queue offset */
+        ptr[8] = 0;                        /* total inserts */
+        ptr[9] = 0;                        /* execution code per block */
+
+        offset += total_size;
+    }
+
+    // setting global execution code
+    host_metadata[single_queue_metadata_size * size] = 0;
+
 
     queueMetadata = cl::Buffer(context, CL_TRUE,
-                      sizeof(hostQueueMetadata));
+                      total_size * sizeof(int));
 
-    queue.enqueueWriteBuffer(queueMetadata, CL_TRUE, 0, sizeof(hostQueueMetadata), hostQueueMetadata);
-
-    //    std::stringstream params_stream;
-    //    params_stream << "-DQUEUE_MAX_NUM_BLOCKS=" << QUEUE_MAX_NUM_BLOCKS << " ";
-    //    params_stream << "-DQUEUE_NUM_THREADS=" << QUEUE_NUM_THREADS;
-
-    //    std::string program_params = params_stream.str();
-
-    ////    std::cout << "parallel queue ocl program params: " << program_params << std::endl;
-
-    //    cl::Program& program = cache.getProgram("ParallelQueue", program_params);
-
-    //   /* std::stringstream params_stream;
-    //    params_stream << "-DQUEUE_MAX_NUM_BLOCKS=" << QUEUE_MAX_NUM_BLOCKS << " ";
-    //    params_stream << "-DQUEUE_NUM_THREADS=" << QUEUE_NUM_THREADS;
-
-    //    std::string program_params = params_stream.str();
-
-    //    std::vector<std::string> sources;
-    //    sources.push_back("ParallelQueue");
-    //    sources.push_back("ParallelQueueTests");
-
-    //    cl::Program& program = cache.getProgram(sources, program_params);
-    //*/
-    //    //////////////
-
-    //    cl::Kernel init_queue_kernel(program, "init_queue_kernel");
-
-    //    init_queue_kernel.setArg(0, queue_workspace);
-    //    init_queue_kernel.setArg(1, inQueueData);
-    //    init_queue_kernel.setArg(2, dataElements);
-    //    init_queue_kernel.setArg(3, outQueueData);
-    //    init_queue_kernel.setArg(4, outMaxSize);
-
-    //    cl::NDRange global(1, 1);
-    //    cl::NDRange local(1, 1);
-
-    //    cl_int status = queue.enqueueNDRangeKernel(init_queue_kernel,
-    //                                               cl::NullRange, global, local);
-    //    assert(!status);
+    queue.enqueueWriteBuffer(queueMetadata, CL_TRUE, 0,
+                             total_size * sizeof(int), host_metadata);
 }
 
 

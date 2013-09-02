@@ -18,8 +18,9 @@ public:
 
     cl::Context& getContext();
     cl::Device& getDevice();
-    cl::CommandQueue& getDefaultCommandQueue();
+    //cl::CommandQueue& getDefaultCommandQueue();
     static ProgramCache& getGlobalInstance();
+    static cl::CommandQueue& getDefaultCommandQueue();
 
 private:
     std::map<std::string, cl::Program> programs;
