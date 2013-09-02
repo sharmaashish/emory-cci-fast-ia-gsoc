@@ -5,6 +5,7 @@
 #include <boost/test/execution_monitor.hpp>
 #include "TestUtils.h"
 #include "opencl/utils/ocl_utils.h"
+#include "Logger.h"
 
 #include <iostream>
 
@@ -68,8 +69,18 @@ BOOST_AUTO_TEST_CASE(morphReconstruction)
                                  sizeof(unsigned char) * size, maskUChar.data);
 
         std::cout << "runnging MR" << std::endl;
+
+        uint64 t1, t2;
+
+        t1 = cci::common::event::timestampInUS();
+
         morphRecon<int, unsigned char>(device_marker, device_mask,
-                                       width, height, 2, 2);
+                                       width, height, 2, 14);
+
+        t2 = cci::common::event::timestampInUS();
+
+        std::cout << "MR finsihed" << std::endl;
+        std::cout << "MR time: " << t2-t1 << "ms" << std::endl;
 
         cv::imwrite(DATA_OUT("reconstruction_out_0.png"), markerInt);
 

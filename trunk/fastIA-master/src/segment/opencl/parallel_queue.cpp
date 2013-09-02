@@ -14,7 +14,8 @@
  * of buffer (in input queue).
  */
 void initQueueMetadata(int dataElements, int totalSize,
-                       cl::Buffer& queueMetadata, cl::CommandQueue& queue)
+                       cl::Buffer& queueMetadata, cl::Buffer& execution_code,
+                       cl::CommandQueue& queue)
 {
 
     std::vector<int> dataElementsVec;
@@ -23,12 +24,15 @@ void initQueueMetadata(int dataElements, int totalSize,
     std::vector<int> totalSizes;
     totalSizes.push_back(totalSize);
 
-    initQueueMetadata(dataElementsVec, totalSizes, queueMetadata, queue);
+    initQueueMetadata(dataElementsVec, totalSizes, queueMetadata,
+                      execution_code, queue);
 }
 
 void initQueueMetadata(std::vector<int> &dataElements,
                        std::vector<int> &totalSizes,
-                       cl::Buffer &queueMetadata, cl::CommandQueue &queue)
+                       cl::Buffer &queueMetadata,
+                       cl::Buffer &executionCode,
+                       cl::CommandQueue &queue)
 {
     assert(dataElements.size() == totalSizes.size());
 
@@ -77,6 +81,12 @@ void initQueueMetadata(std::vector<int> &dataElements,
 
     queue.enqueueWriteBuffer(queueMetadata, CL_TRUE, 0,
                              total_size * sizeof(int), host_metadata);
+
+    _cl_buffer_region region;
+    region.origin = (total_size - 1) * sizeof(int);
+    region.size = sizeof(int);
+
+    executionCode = queueMetadata.createSubBuffer(0, CL_BUFFER_CREATE_TYPE_REGION, &region);
 }
 
 

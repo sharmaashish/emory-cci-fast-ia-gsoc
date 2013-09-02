@@ -3,7 +3,7 @@
 #include "ocl_utils.h"
 #include "ocl_source_registry.h"
 
-#define DEBUG_PRINT
+//#define DEBUG_PRINT
 
 ProgramCache::ProgramCache(cl::Context& context, cl::Device& device)
 #ifdef OPENCL_PROFILE
@@ -83,8 +83,9 @@ cl::Program& ProgramCache::getProgram(const std::vector<std::string>& names,
                          .getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]);
             throw ex;
         }
-
+#ifdef DEBUG_PRINT
         std::cout << "OK" << std::endl;
+#endif
     }
 
     return programs[key];
