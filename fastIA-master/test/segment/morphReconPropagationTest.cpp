@@ -144,15 +144,18 @@ BOOST_AUTO_TEST_CASE(morphReconPropagation)
         queue.enqueueWriteBuffer(device_image, CL_TRUE, 0,
                                  sizeof(host_image), host_image);
 
+        int execution_code;
+
         /* running morphological reconstruction kernel */
         morphReconQueuePropagation<int, unsigned char>(device_queue,
                                        data_elements, queue_size, device_seeds,
-                                       device_image, ncols, nrows);
+                                       device_image, ncols, nrows, execution_code);
 
 
         queue.enqueueReadBuffer(device_seeds, CL_TRUE, 0,
                                 sizeof(host_seeds), host_seeds);
 
+        std::cout << "execution code: " << execution_code << std::endl;
         std::cout << "printing output..." << std::endl;
 
         for(int i = 0; i < 32; ++i)

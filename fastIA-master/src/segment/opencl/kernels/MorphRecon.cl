@@ -4,6 +4,8 @@
 
 #define LOCAL_QUEUE_SIZE 5
 
+#define PACK_INDEX(X, Y) ((X << 16) | Y)
+
 #define DEBUG_PRINT
 
 inline int propagate(__global MARKER_TYPE* marker, __global MASK_TYPE* mask,

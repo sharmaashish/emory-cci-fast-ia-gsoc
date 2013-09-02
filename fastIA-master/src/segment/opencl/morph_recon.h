@@ -11,7 +11,7 @@
 #include <cassert>
 #include <vector>
 
-#define DEBUG_PRINT
+//#define DEBUG_PRINT
 #define WARNINGS_AS_ERRORS
 
 #define INIT_SCAN_X_THREADS_X 16
@@ -309,16 +309,18 @@ void morphReconQueuePropagation(cl::Buffer queue_data,
                       std::vector<int>& data_elements,
                       std::vector<int>& queues_sizes, int blocks_num,
                       cl::Buffer marker, cl::Buffer mask, int width, int height,
+                      int& execution_code,
                       cl::CommandQueue &queue, cl::Program &program)
 {
     assert(data_elements.size() == queues_sizes.size());
     assert(data_elements.size() == blocks_num);
 
     cl::Buffer device_queue_metadata;
+    cl::Buffer execution_code_buff;
 
     // initialize queue metadata buffer
     initQueueMetadata(data_elements, queues_sizes,
-                      device_queue_metadata, queue);
+                      device_queue_metadata, execution_code_buff, queue);
 
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
@@ -361,6 +363,10 @@ void morphReconQueuePropagation(cl::Buffer queue_data,
 
     queue.enqueueNDRangeKernel(morph_recon_kernel,
                                cl::NullRange, global, local);
+
+    queue.enqueueReadBuffer(execution_code_buff, CL_TRUE, 0,
+                            sizeof(int), &execution_code);
+
 }
 
 /**
@@ -381,6 +387,7 @@ template <typename MARKER_TYPE, typename MASK_TYPE>
 void morphReconQueuePropagation(cl::Buffer queue_data, int data_elements,
                 int queue_size,
                 cl::Buffer marker, cl::Buffer mask, int width, int height,
+                int& execution_code,
                 cl::CommandQueue &queue, cl::Program &program)
 {
     std::vector<int> data_elements_vec;
@@ -391,14 +398,14 @@ void morphReconQueuePropagation(cl::Buffer queue_data, int data_elements,
 
     morphReconQueuePropagation<MARKER_TYPE, MASK_TYPE>(
                 queue_data, data_elements_vec, queue_sizes,
-                1, marker, mask, width, height, queue, program);
+                1, marker, mask, width, height, execution_code, queue, program);
 
 }
 
 template <typename MARKER_TYPE, typename MASK_TYPE>
 void morphReconQueuePropagation(cl::Buffer queue_data, int data_elements,
                 int queue_size, cl::Buffer marker, cl::Buffer mask,
-                int width, int height,
+                int width, int height, int& execution_code,
                 ProgramCache& cache = ProgramCache::getGlobalInstance(),
                 cl::CommandQueue& queue = ProgramCache::getDefaultCommandQueue())
 {
@@ -411,7 +418,8 @@ void morphReconQueuePropagation(cl::Buffer queue_data, int data_elements,
 
 
     morphReconQueuePropagation<MARKER_TYPE, MASK_TYPE>(queue_data,
-       data_elements, queue_size, marker, mask, width, height, queue, program);
+                                data_elements, queue_size, marker, mask,
+                                width, height, execution_code, queue, program);
 }
 
 
@@ -443,84 +451,81 @@ void morphRecon(cl::Buffer marker, cl::Buffer mask, int width, int height,
 
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
-    for(int i = 0; i < raster_scans_num; ++i)
+    int execution_code;
+
+    do
     {
-        morphReconInitScan<MARKER_TYPE, MASK_TYPE>
-                (marker, mask, width, height, queue, program);
-    }
+        for(int i = 0; i < raster_scans_num; ++i)
+        {
+            morphReconInitScan<MARKER_TYPE, MASK_TYPE>
+                    (marker, mask, width, height, queue, program);
+        }
 
-    int queue_total_size = width * height;
-    int queue_data_size;
+        int queue_total_size = width * height;
+        int queue_data_size;
 
-    cl::Buffer device_queue_data(context, CL_TRUE,
-                                 sizeof(int) * queue_total_size);
+        cl::Buffer device_queue_data(context, CL_TRUE,
+                                     sizeof(int) * queue_total_size);
 
-    morphReconInitQueue<MARKER_TYPE, MASK_TYPE>(marker, mask, device_queue_data,
-                                                width, height, queue_data_size,
-                                                queue, program);
+        morphReconInitQueue<MARKER_TYPE, MASK_TYPE>(marker, mask, device_queue_data,
+                                                    width, height, queue_data_size,
+                                                    queue, program);
 
-    std::cout << "queue initialization finished, queue init size:"
-              << queue_data_size << std::endl;
+    #ifdef DEBUG_PRINT
+        std::cout << "queue initialization finished, queue init size:"
+                  << queue_data_size << std::endl;
+    #endif
 
+        int single_queue_chunk = (queue_data_size + blocks_num - 1) / blocks_num;
 
-    int single_queue_chunk = (queue_data_size + blocks_num - 1) / blocks_num;
+        // multiplication by 2 because is is size of input and output queue
+        int single_queue_size = single_queue_chunk * QUEUE_EXPAND_FACTOR * 2;
+        int total_queues_size = single_queue_size * blocks_num;
 
-    // multiplication by 2 because is is size of input and output queue
-    int single_queue_size = single_queue_chunk * QUEUE_EXPAND_FACTOR * 2;
-    int total_queues_size = single_queue_size * blocks_num;
+        // allocating device queues
+        cl::Buffer device_queues(context, CL_TRUE,
+                                 sizeof(int) * total_queues_size);
 
-    // allocating device queues
-    cl::Buffer device_queues(context, CL_TRUE, sizeof(int) * total_queues_size);
+        std::vector<int> nums_of_elements;
+        std::vector<int> total_sizes;
 
-    std::vector<int> nums_of_elements;
-    std::vector<int> total_sizes;
+        int src_offset = 0;
+        int dst_offset = 0;
 
-    int src_offset = 0;
-    int dst_offset = 0;
+        // partitioning data and putting to consecutive queues
 
-    // partitioning data and putting to consecutive queues
+        for(int i = 0; i < blocks_num; ++i)
+        {
+            total_sizes.push_back(single_queue_size);
 
-    for(int i = 0; i < blocks_num; ++i)
-    {
-        total_sizes.push_back(single_queue_size);
+            int current_chunk;
 
-        int current_chunk;
+            if(i + 1 == blocks_num)
+                current_chunk = queue_data_size - i * single_queue_chunk;
+            else
+                current_chunk = single_queue_chunk;
 
-        if(i + 1 == blocks_num)
-            current_chunk = queue_data_size - i * single_queue_chunk;
-        else
-            current_chunk = single_queue_chunk;
+            nums_of_elements.push_back(current_chunk);
 
-        nums_of_elements.push_back(current_chunk);
+            queue.enqueueCopyBuffer(device_queue_data, device_queues,
+                                    src_offset * sizeof(int),
+                                    dst_offset * sizeof(int),
+                                    current_chunk * sizeof(int));
 
-        queue.enqueueCopyBuffer(device_queue_data, device_queues,
-                                src_offset * sizeof(int),
-                                dst_offset * sizeof(int),
-                                current_chunk * sizeof(int));
+            src_offset += current_chunk;
+            dst_offset += single_queue_size;
+        }
 
-        src_offset += current_chunk;
-        dst_offset += single_queue_size;
-    }
+        morphReconQueuePropagation<MARKER_TYPE, MASK_TYPE>(
+                    device_queues, nums_of_elements, total_sizes, blocks_num,
+                    marker, mask, width, height, execution_code, queue, program);
 
-    morphReconQueuePropagation<MARKER_TYPE, MASK_TYPE>(
-                device_queues, nums_of_elements, total_sizes, blocks_num,
-                marker, mask, width, height, queue, program);
+#ifdef DEBUG_PRINT
+        std::cout << "execution code:" << execution_code << std::endl;
+#endif
+
+    }while(execution_code);
 }
-
-
-//void morphRecon(cl::Buffer marker, cl::Buffer mask,
-//                int width, int height,
-//                ProgramCache& cache = ProgramCache::getGlobalInstance(),
-//                cl::CommandQueue& queue = ProgramCache::getGlobalInstance()
-//                                                    .getDefaultCommandQueue())
-//{
-//    std::string types = "-DMARKER_TYPE="
-//            + TypeResolver<MARKER_TYPE>::type_as_string
-//            + " -DMASK_TYPE=" + Ty
-
-//    morphRecon(marker, mask, types, width, height, cache, queue);
-//}
-
 
 
 #endif // MORPH_RECON_H

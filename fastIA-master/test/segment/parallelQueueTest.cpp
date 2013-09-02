@@ -227,9 +227,10 @@ BOOST_AUTO_TEST_CASE(dequeue_test)
                                      sizeof(host_queue_data), host_queue_data);
 
             cl::Buffer device_queue_metadata;
+            cl::Buffer execution_code;
 
             // initialize queue metadata buffer
-            initQueueMetadata(input_size, total_size, device_queue_metadata);
+            initQueueMetadata(input_size, total_size, device_queue_metadata, execution_code);
 
             cl::Buffer device_result(context, CL_TRUE, result_size_bytes);
 
@@ -297,9 +298,10 @@ BOOST_AUTO_TEST_CASE(queue_sum_test)
             queue.enqueueWriteBuffer(device_queue_data, CL_TRUE, 0, sizeof(host_queue_data), host_queue_data);
 
             cl::Buffer device_queue_metadata;
+            cl::Buffer executionCode;
 
             // initialize queue metadata buffer
-            initQueueMetadata(input_size, total_size, device_queue_metadata);
+            initQueueMetadata(input_size, total_size, device_queue_metadata, executionCode);
 
 
 
@@ -369,9 +371,10 @@ BOOST_AUTO_TEST_CASE(big_local_queues_test)
             queue.enqueueWriteBuffer(device_queue_data, CL_TRUE, 0, sizeof(host_queue_data), host_queue_data);
 
            cl::Buffer device_queue_metadata;
+           cl::Buffer executionCode;
 
             // initialize queue metadata buffer
-            initQueueMetadata(input_size, total_size, device_queue_metadata);
+            initQueueMetadata(input_size, total_size, device_queue_metadata, executionCode);
 
 
 //            int host_in[input_size];
