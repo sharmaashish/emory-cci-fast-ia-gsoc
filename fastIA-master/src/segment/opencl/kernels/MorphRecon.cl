@@ -20,7 +20,7 @@ inline int propagate(__global MARKER_TYPE* marker, __global MASK_TYPE* mask,
     {
         MARKER_TYPE newValue = min(pval, (MARKER_TYPE)maskXYval);
         atomic_max(&(marker[index]), newValue);
-        returnValue = index;
+        returnValue = PACK_INDEX(x, y);
     }
 
     return returnValue;
@@ -329,7 +329,7 @@ __kernel void init_queue_kernel(__global MARKER_TYPE* marker,
     if(is_candidate)
     {
         int queue_pos = atomic_inc(queue_size);
-        queue_data[queue_pos] = idx;
+        queue_data[queue_pos] = PACK_INDEX(global_id_x, global_id_y);
     }
 }
 
@@ -367,16 +367,16 @@ __kernel void morph_recon_kernel(__global int* total_inserts,
 
         // Try to get some work.
         workUnit = dequeueElement(queue_data, queue_metadata, &loopIt, gotWork);
-        y = workUnit / ncols;
-        x = workUnit % ncols; // modulo is very inefficient on gpu!
+        y = workUnit & 0xFFFF;
+        x = workUnit >> 16;
 
-        assert(workUnit < ncols * nrows);
+        assert(x < ncols && y < nrows);
 
         MARKER_TYPE pval = 0;
 
         if(workUnit >= 0)
         {
-            pval = marker[workUnit];
+            pval = marker[y * ncols + x];
         }
 
         int retWork = -1;

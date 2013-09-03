@@ -22,6 +22,8 @@
 
 BOOST_AUTO_TEST_CASE(morphReconstruction)
 {
+    uint64 total_time = 0;
+
     for(int i = 0; i < ITER_NUM; ++i)
     {
         std::cout << "reading data..." << std::endl;
@@ -79,8 +81,11 @@ BOOST_AUTO_TEST_CASE(morphReconstruction)
 
         t2 = cci::common::event::timestampInUS();
 
+        uint64 exec_time = t2 - t1;
+        total_time += exec_time;
+
         std::cout << "MR finsihed" << std::endl;
-        std::cout << "MR time: " << t2-t1 << "ms" << std::endl;
+        std::cout << "MR time: " << exec_time << "us" << std::endl;
 
         cv::imwrite(DATA_OUT("reconstruction_out_0.png"), markerInt);
 
@@ -89,4 +94,7 @@ BOOST_AUTO_TEST_CASE(morphReconstruction)
 
         cv::imwrite(DATA_OUT("reconstruction_out.png"), markerInt);
     }
+
+    std::cout << "MR, AVG time: "
+              << total_time / ITER_NUM << "us" << std::endl;
 }
