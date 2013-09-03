@@ -316,11 +316,12 @@ void morphReconQueuePropagation(cl::Buffer queue_data,
     assert(data_elements.size() == blocks_num);
 
     cl::Buffer device_queue_metadata;
-    cl::Buffer execution_code_buff;
+    //cl::Buffer execution_code_buff;
+    int execution_code_offset;
 
     // initialize queue metadata buffer
     initQueueMetadata(data_elements, queues_sizes,
-                      device_queue_metadata, execution_code_buff, queue);
+                      device_queue_metadata, execution_code_offset, queue);
 
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
@@ -364,7 +365,7 @@ void morphReconQueuePropagation(cl::Buffer queue_data,
     queue.enqueueNDRangeKernel(morph_recon_kernel,
                                cl::NullRange, global, local);
 
-    queue.enqueueReadBuffer(execution_code_buff, CL_TRUE, 0,
+    queue.enqueueReadBuffer(device_queue_metadata, CL_TRUE, execution_code_offset,
                             sizeof(int), &execution_code);
 
 }
