@@ -10,13 +10,13 @@
 #include "utils/ocl_program_cache.h"
 
 void initQueueMetadata(int dataElements, int totalSize,
-              cl::Buffer& queueMetadata, cl::Buffer& executionCode,
+              cl::Buffer& queueMetadata, int& execution_code_offset,// cl::Buffer& executionCode,
               cl::CommandQueue& queue = ProgramCache::getDefaultCommandQueue());
 
 void initQueueMetadata(std::vector<int>& dataElements,
               std::vector<int>& totalSizes,
               cl::Buffer& queueMetadata,
-              cl::Buffer& executionCode,
+              int& execution_code_offset, //cl::Buffer& executionCode,
               cl::CommandQueue& queue = ProgramCache::getDefaultCommandQueue());
 
 
