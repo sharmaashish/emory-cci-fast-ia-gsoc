@@ -47,8 +47,8 @@ int main (int argc, char **argv){
                                 mask.copyTo(roiMask);
                         }
                 }
-                marker = tempMarker;
                 mask = tempMask;
+                marker = tempMarker;
         }
 	uint64_t t1 = cci::common::event::timestampInUS();
 //	Mat recon1 = nscale::imreconstruct<unsigned char>(marker, mask, 8);
