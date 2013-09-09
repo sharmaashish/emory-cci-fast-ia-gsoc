@@ -75,6 +75,9 @@ void morphRecon(cl::Buffer marker, cl::Buffer mask, int width, int height,
                   << queue_data_size << std::endl;
     #endif
 
+        if(!queue_data_size)
+            break;
+
         int single_queue_chunk = (queue_data_size + blocks_num - 1) / blocks_num;
 
         // multiplication by 2 because is is size of input and output queue
