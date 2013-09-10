@@ -19,6 +19,7 @@
 #include "NeighborOperations.h"
 #include "ConnComponents.h"
 
+//#define TIME_INFO_PRINT
 
 using namespace cv;
 
@@ -306,7 +307,10 @@ Mat distTransformFixTilingEffects(Mat& nearestNeighbor, int tileSize, bool calcD
 		}
 	}
 	uint64_t t2 = cci::common::event::timestampInUS();
+
+#ifdef TIME_INFO_PRINT
 	std::cout << "    scan time = " << t2-t1 << "ms for " << count << " queue entries="<< xQ.size()<< std::endl;
+#endif
 
 	count = 0;
 	while(!xQ.empty()){
@@ -858,7 +862,9 @@ Mat imreconstructFixTilingEffects(const Mat& seeds, const Mat& image, int connec
 		nTiles = seeds.cols/tileSize;
 	}
 
+#ifndef TIME_INFO_PRINT
 	std::cout << "Copy time="<< cci::common::event::timestampInUS()-t1<<std::endl;
+#endif
 
 	T pval, preval;
 	int xminus, xplus, yminus, yplus;
@@ -932,8 +938,9 @@ Mat imreconstructFixTilingEffects(const Mat& seeds, const Mat& image, int connec
 		}
 	}
 	uint64_t t2 = cci::common::event::timestampInUS();
+#ifdef TIME_INFO_PRINT
 	std::cout << "    scan time = " << t2-t1 << "ms for " << count << " queue entries="<< xQ.size()<< std::endl;
-
+#endif
 	// now process the queue.
 //	T qval, ival;
 	int x, y;
@@ -1029,7 +1036,9 @@ Mat imreconstructFixTilingEffectsParallel(const Mat& seeds, const Mat& image, in
 		nTiles = seeds.cols/tileSize;
 	}
 
+#ifndef TIME_INFO_PRINT
 	std::cout << "Copy time="<< cci::common::event::timestampInUS()-t1<<std::endl;
+#endif
 //	omp_set_num_threads(1);
 	int nThreads;
 	#pragma omp parallel
@@ -1037,7 +1046,7 @@ Mat imreconstructFixTilingEffectsParallel(const Mat& seeds, const Mat& image, in
 		nThreads = omp_get_num_threads();
 	}
 
-	std::cout << "nThreads = "<< nThreads << std::endl;
+//	std::cout << "nThreads = "<< nThreads << std::endl;
 	T pval, preval;
 	int xminus, xplus, yminus, yplus;
 	int maxx = output.cols - 1;
@@ -1131,8 +1140,9 @@ Mat imreconstructFixTilingEffectsParallel(const Mat& seeds, const Mat& image, in
 		std::cout << "Queue["<<i<<"]="<< xQ[i].size() << std::endl;
 		count+=xQ[i].size();
 	}
+#ifdef TIME_INFO_PRINT
 	std::cout << "    scan time = " << t2-t1 << "ms for queue entries="<< count<< std::endl;
-
+#endif
 	T*ppval;
 	// now process the queue.
 //	T qval, ival;
@@ -1243,7 +1253,9 @@ Mat imreconstructParallelQueue(const Mat& seeds, const Mat& image, int connectiv
 		copyMakeBorder(image, input, 1, 1, 1, 1, BORDER_CONSTANT, 0);
 	}
 
+#ifndef TIME_INFO_PRINT
 	std::cout << "Copy time="<< cci::common::event::timestampInUS()-t1<<std::endl;
+#endif
 //	omp_set_num_threads(2);
 //	int nThreads;
 	#pragma omp parallel
@@ -1381,8 +1393,9 @@ Mat imreconstructParallelQueue(const Mat& seeds, const Mat& image, int connectiv
 	for(int i = 0; i < xQ.size(); i++){
 		count+=xQ[i].size();
 	}
+#ifdef TIME_INFO_PRINT
 	std::cout << "    scan time = " << t2-t1 << "ms for queue entries="<< count<< std::endl;
-
+#endif
 	T*ppval;
 	// now process the queue.
 	#pragma omp parallel private(xminus,xplus,yminus,yplus,oPtr,oPtrPlus,oPtrMinus,iPtr,iPtrPlus,iPtrMinus,ppval)
