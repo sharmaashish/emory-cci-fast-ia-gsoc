@@ -1,8 +1,8 @@
-#summary One-sentence summary of this page.
+#summary Morphological Reconstruction performance comparison.
 
 = Introduction =
 
-Add your content here.
+MR performance comparison for OpenCL, Nvidia Cuda, OpenMP and standard serial CPU implementations.
 
 
 = Details =
@@ -13,20 +13,29 @@ Add your content here.  Format your content with:
   * Automatic links to other wiki pages
 
 
-[1] mr_tests/in-imrecon-gray-marker.png
-[2] mr_tests/gbm2.1.ndpi-0000004096-0000004096_inv_eroded_4x.png
-[3] mr_tests/normal.3.ndpi-0000028672-0000012288_inv_eroded_3x.png
-[4] mr_tests/oligoastroIII.1.ndpi-0000053248-0000008192_inv_eroded_3x.png
-[5] mr_tests/oligoIII.1.ndpi-0000012288-0000028672_inv_eroded_3x.png
+|| || OPENCL || NVIDIA CUDA || *ratio* ||
+|| GeForce GT 460 || 1s 380ms || 1s 228ms  || 0,89 || 
+|| GeForce GT 430 || 4s 912ms || 4s 223ms  || 0,86 || 
+|| Tesla C2070 || 1s 146ms || 0s 897ms || 0,79 || 
+|| AMD FirePro™ W9000 || || || ||
 
-[1] mr_tests/in-imrecon-gray-mask.png
-[2] mr_tests/gbm2.1.ndpi-0000004096-0000004096_inv.png
-[3] mr_tests/normal.3.ndpi-0000028672-0000012288_inv.png
-[4] mr_tests/oligoastroIII.1.ndpi-0000053248-0000008192_inv.png
-[5] mr_tests/oligoIII.1.ndpi-0000012288-0000028672_inv.png
+|| || OPENCL || CPU SERIAL || CPU MULTICORE || *ratio* ||
+|| Intel Core Duo T9300 2,5GHz || 50s 495ms || 7s 113ms || 4s 134ms || 0,082 ||
 
 
-|| || [1]  || set 2 ||
-|| Tesla || || || 
-|| CPU ||  || || 
-|| GeForce || || || 
+
+
+Data used are located in test_data directory on svn repositry.
+Marker - mask pairs used for testing:
+
+ * mr_tests/in-imrecon-gray-marker.png
+ * mr_tests/gbm2.1.ndpi-0000004096-0000004096_inv_eroded_4x.png
+ * mr_tests/normal.3.ndpi-0000028672-0000012288_inv_eroded_3x.png
+ * mr_tests/oligoastroIII.1.ndpi-0000053248-0000008192_inv_eroded_3x.png
+ * mr_tests/oligoIII.1.ndpi-0000012288-0000028672_inv_eroded_3x.png
+
+ * mr_tests/in-imrecon-gray-mask.png
+ * mr_tests/gbm2.1.ndpi-0000004096-0000004096_inv.png
+ * mr_tests/normal.3.ndpi-0000028672-0000012288_inv.png
+ * mr_tests/oligoastroIII.1.ndpi-0000053248-0000008192_inv.png
+ * mr_tests/oligoIII.1.ndpi-0000012288-0000028672_inv.png
