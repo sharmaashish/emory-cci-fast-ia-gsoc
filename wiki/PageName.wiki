@@ -1,0 +1,32 @@
+#summary One-sentence summary of this page.
+
+= Introduction =
+
+Add your content here.
+
+
+= Details =
+
+Add your content here.  Format your content with:
+  * Text in *bold* or _italic_
+  * Headings, paragraphs, and lists
+  * Automatic links to other wiki pages
+
+
+[1] mr_tests/in-imrecon-gray-marker.png
+[2] mr_tests/gbm2.1.ndpi-0000004096-0000004096_inv_eroded_4x.png
+[3] mr_tests/normal.3.ndpi-0000028672-0000012288_inv_eroded_3x.png
+[4] mr_tests/oligoastroIII.1.ndpi-0000053248-0000008192_inv_eroded_3x.png
+[5] mr_tests/oligoIII.1.ndpi-0000012288-0000028672_inv_eroded_3x.png
+
+[1] mr_tests/in-imrecon-gray-mask.png
+[2] mr_tests/gbm2.1.ndpi-0000004096-0000004096_inv.png
+[3] mr_tests/normal.3.ndpi-0000028672-0000012288_inv.png
+[4] mr_tests/oligoastroIII.1.ndpi-0000053248-0000008192_inv.png
+[5] mr_tests/oligoIII.1.ndpi-0000012288-0000028672_inv.png
+
+
+|| || [1]  || set 2 ||
+|| Tesla || || || 
+|| CPU ||  || || 
+|| GeForce || || || 
