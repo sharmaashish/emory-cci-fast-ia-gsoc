@@ -7,11 +7,7 @@ MR performance comparison for OpenCL, Nvidia Cuda, OpenMP and standard serial CP
 
 = Details =
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
-
+== OpenCL/CUDA on GPU ==
 
 || || OPENCL || NVIDIA CUDA || *ratio* ||
 || GeForce GT 460 || 1s 380ms || 1s 228ms  || 0,89 || 
@@ -19,13 +15,27 @@ Add your content here.  Format your content with:
 || Tesla C2070 || 1s 146ms || 0s 897ms || 0,79 || 
 || AMD FirePro™ W9000 || || || ||
 
+== OpenCL/serial CPU/OpenMP on CPU ==
+
 || || OPENCL || CPU SERIAL || CPU MULTICORE || *ratio* ||
 || Intel Core Duo T9300 2,5GHz || 50s 495ms || 7s 113ms || 4s 134ms || 0,082 ||
 
+===Possible reasons of poor performance for OpenCL implementation using CPU===
+ * Using local queues per work-item and moving them to higher level queue using prefix sum is probably a substantial reason. On CPU architectures every work-group is executed by single thread, from beginning to the end. It cause that there is no concurrency between work-times in work-group. For CPU version, local per-work-item queues should be replaced by per-work-group queues. Each work-item could add data to local queue by simply increasing shared index.
+ * OpenCL version was tested using AMD's Ocl implementations on Intel CPU. I may cause that code is not the best optimized.
+
+=== Possible solutions ===
+ * Separate MR Ocl implementation for gpu and cpu version.
 
 
+
+== Test data ==
 
 Data used are located in test_data directory on svn repositry.
+
+The last part of the marker file name ('eroded_Nx') means how many times
+erosion was performed on original image (mask).
+
 Marker - mask pairs used for testing:
 
  * mr_tests/in-imrecon-gray-marker.png
