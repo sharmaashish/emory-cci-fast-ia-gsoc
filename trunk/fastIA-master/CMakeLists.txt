@@ -103,7 +103,7 @@ if(NS_FEATURES OR NS_SEGMENT)
             message(STATUS "CUDA detected: " ${CUDA_VERSION})
     
             # These vars will be processed in other scripts
-                set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --use_fast_math -arch=sm_20 -DPREFIX_SUM)
+                set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --use_fast_math -arch=sm_20 -O2 -DPREFIX_SUM)
          #	set(CUDA_NVCC_FLAGS_DEBUG ${CUDA_NVCC_FLAGS_DEBUG} -G)  # too slow...
            set(CUDA_NVCC_FLAGS_DEBUG ${CUDA_NVCC_FLAGS_DEBUG} -DTHRUST_DEBUG)
             message(STATUS "CUDA NVCC target flags: ${CUDA_NVCC_FLAGS}")
