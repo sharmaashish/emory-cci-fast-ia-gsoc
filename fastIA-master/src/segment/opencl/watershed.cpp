@@ -98,7 +98,6 @@ void watershed(int width, int height,
               << " global height=" << global_height << std::endl;
 #endif
 
-    cl::NDRange NullRange;
     cl::NDRange global(global_width, global_height);
     cl::NDRange local(BLOCK_SIZE, BLOCK_SIZE);
 
@@ -107,7 +106,7 @@ void watershed(int width, int height,
 #ifdef OPENCL_PROFILE
     {
         VECTOR_CLASS<cl::Event> events_vector(1);
-        status = queue.enqueueNDRangeKernel(descent_kernel, NullRange,
+        status = queue.enqueueNDRangeKernel(descent_kernel, cl::NullRange,
                                             global, local, __null,
                                             &events_vector[0]);
 
@@ -122,7 +121,7 @@ void watershed(int width, int height,
         watershed_descent_kernel_time = total_time;
     }
 #else
-    status = queue.enqueueNDRangeKernel(descent_kernel, NullRange,
+    status = queue.enqueueNDRangeKernel(descent_kernel, cl::NullRange,
                                         global, local);
 #endif
 
@@ -142,7 +141,7 @@ void watershed(int width, int height,
 #ifdef OPENCL_PROFILE
     {
         VECTOR_CLASS<cl::Event> events_vector(1);
-        status = queue.enqueueNDRangeKernel(increment_kernel, NullRange,
+        status = queue.enqueueNDRangeKernel(increment_kernel, cl::NullRange,
                                             global, local, __null,
                                             &events_vector[0]);
 
@@ -157,7 +156,7 @@ void watershed(int width, int height,
         watershed_increment_kernel_time = total_time;
     }
 #else
-    status = queue.enqueueNDRangeKernel(increment_kernel, NullRange,
+    status = queue.enqueueNDRangeKernel(increment_kernel, cl::NullRange,
                                         global, local);
 #endif
 
@@ -192,7 +191,7 @@ void watershed(int width, int height,
 #ifdef OPENCL_PROFILE
         {
             VECTOR_CLASS<cl::Event> events_vector(1);
-            status = queue.enqueueNDRangeKernel(minima_kernel, NullRange,
+            status = queue.enqueueNDRangeKernel(minima_kernel, cl::NullRange,
                                                 global, local, __null,
                                                 &events_vector[0]);
 
@@ -205,7 +204,7 @@ void watershed(int width, int height,
             watershed_minima_kernel_time += total_time;
         }
 #else
-        status = queue.enqueueNDRangeKernel(minima_kernel, NullRange,
+        status = queue.enqueueNDRangeKernel(minima_kernel, cl::NullRange,
                                             global, local);
 #endif
         queue.enqueueReadBuffer(counter, CL_TRUE, 0, sizeof(int), &new_val);
@@ -246,7 +245,7 @@ void watershed(int width, int height,
 #ifdef OPENCL_PROFILE
         {
             VECTOR_CLASS<cl::Event> events_vector(1);
-            status = queue.enqueueNDRangeKernel(plateau_kernel, NullRange,
+            status = queue.enqueueNDRangeKernel(plateau_kernel, cl::NullRange,
                                                 global, local, __null,
                                                 &events_vector[0]);
 
@@ -259,7 +258,7 @@ void watershed(int width, int height,
             watershed_plateau_kernel_time += total_time;
         }
 #else
-        status = queue.enqueueNDRangeKernel(plateau_kernel, NullRange,
+        status = queue.enqueueNDRangeKernel(plateau_kernel, cl::NullRange,
                                             global, local);
 #endif
         queue.enqueueReadBuffer(counter, CL_TRUE, 0, sizeof(int), &new_val);
@@ -314,7 +313,7 @@ void watershed(int width, int height,
 #ifdef OPENCL_PROFILE
         {
             VECTOR_CLASS<cl::Event> events_vector(1);
-            status = queue.enqueueNDRangeKernel(flood_kernel, NullRange,
+            status = queue.enqueueNDRangeKernel(flood_kernel, cl::NullRange,
                                                 global, local, __null,
                                                 &events_vector[0]);
 
@@ -327,7 +326,7 @@ void watershed(int width, int height,
             watershed_flood_kernel_time += total_time;
         }
 #else
-        status = queue.enqueueNDRangeKernel(flood_kernel, NullRange,
+        status = queue.enqueueNDRangeKernel(flood_kernel, cl::NullRange,
                                             global, local);
 #endif
 
