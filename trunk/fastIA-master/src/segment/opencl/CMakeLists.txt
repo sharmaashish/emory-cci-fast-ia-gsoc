@@ -19,6 +19,7 @@ set(cllibsrcs
     utils/ocl_type_resolver.cpp
     pixel-ops.cpp
     watershed.cpp
+    component_labeling.cpp
     parallel_queue.cpp
     morph_recon.h
     morph_recon_internal.h

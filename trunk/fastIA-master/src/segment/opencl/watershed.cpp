@@ -59,18 +59,23 @@ void watershed(int width, int height,
     cl::Kernel flood_kernel(program, "flood_kernel");
 
     //setting constant memory with neigbourhood
-    cl::Buffer cl_neighbourhood_x = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(neighbourhood_x));
-    cl::Buffer cl_neighbourhood_y = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(neighbourhood_y));
+    cl::Buffer cl_neighbourhood_x = cl::Buffer(context,CL_MEM_READ_ONLY,
+                                               sizeof(neighbourhood_x));
+    cl::Buffer cl_neighbourhood_y = cl::Buffer(context, CL_MEM_READ_ONLY,
+                                               sizeof(neighbourhood_y));
 
 #ifdef OPENCL_PROFILE
     cl::Event first_event;
-    queue.enqueueWriteBuffer(cl_neighbourhood_x, CL_TRUE, 0, sizeof(neighbourhood_x),
+    queue.enqueueWriteBuffer(cl_neighbourhood_x, CL_TRUE, 0,
+                             sizeof(neighbourhood_x),
                              neighbourhood_x, __null, &first_event);
 #else
-    queue.enqueueWriteBuffer(cl_neighbourhood_x, CL_TRUE, 0, sizeof(neighbourhood_x), neighbourhood_x);
+    queue.enqueueWriteBuffer(cl_neighbourhood_x, CL_TRUE, 0,
+                             sizeof(neighbourhood_x), neighbourhood_x);
 #endif
 
-    queue.enqueueWriteBuffer(cl_neighbourhood_y, CL_TRUE, 0, sizeof(neighbourhood_y), neighbourhood_y);
+    queue.enqueueWriteBuffer(cl_neighbourhood_y, CL_TRUE, 0,
+                             sizeof(neighbourhood_y), neighbourhood_y);
 
     //const size_t block_size = 6;
     //cl::LocalSpaceArg local_mem = cl::__local(block_size * block_size * sizeof(float));
@@ -89,7 +94,8 @@ void watershed(int width, int height,
     size_t global_height = (height / (BLOCK_SIZE - 2) + 1) * BLOCK_SIZE;
 
 #ifdef DEBUG_PRINT
-    std::cout << "global width=" << global_width << " global height=" << global_height << std::endl;
+    std::cout << "global width=" << global_width
+              << " global height=" << global_height << std::endl;
 #endif
 
     cl::NDRange NullRange;
@@ -101,7 +107,9 @@ void watershed(int width, int height,
 #ifdef OPENCL_PROFILE
     {
         VECTOR_CLASS<cl::Event> events_vector(1);
-        status = queue.enqueueNDRangeKernel(descent_kernel, NullRange, global, local, __null, &events_vector[0]);
+        status = queue.enqueueNDRangeKernel(descent_kernel, NullRange,
+                                            global, local, __null,
+                                            &events_vector[0]);
 
         cl::WaitForEvents(events_vector);
 
@@ -114,7 +122,8 @@ void watershed(int width, int height,
         watershed_descent_kernel_time = total_time;
     }
 #else
-    status = queue.enqueueNDRangeKernel(descent_kernel, NullRange, global, local);
+    status = queue.enqueueNDRangeKernel(descent_kernel, NullRange,
+                                        global, local);
 #endif
 
 #ifdef DEBUG_PRINT
@@ -133,7 +142,9 @@ void watershed(int width, int height,
 #ifdef OPENCL_PROFILE
     {
         VECTOR_CLASS<cl::Event> events_vector(1);
-        status = queue.enqueueNDRangeKernel(increment_kernel, NullRange, global, local, __null, &events_vector[0]);
+        status = queue.enqueueNDRangeKernel(increment_kernel, NullRange,
+                                            global, local, __null,
+                                            &events_vector[0]);
 
         cl::WaitForEvents(events_vector);
 
@@ -146,7 +157,8 @@ void watershed(int width, int height,
         watershed_increment_kernel_time = total_time;
     }
 #else
-    status = queue.enqueueNDRangeKernel(increment_kernel, NullRange, global, local);
+    status = queue.enqueueNDRangeKernel(increment_kernel, NullRange,
+                                        global, local);
 #endif
 
 //    queue.enqueueBarrier();
@@ -180,7 +192,9 @@ void watershed(int width, int height,
 #ifdef OPENCL_PROFILE
         {
             VECTOR_CLASS<cl::Event> events_vector(1);
-            status = queue.enqueueNDRangeKernel(minima_kernel, NullRange, global, local, __null, &events_vector[0]);
+            status = queue.enqueueNDRangeKernel(minima_kernel, NullRange,
+                                                global, local, __null,
+                                                &events_vector[0]);
 
             cl::WaitForEvents(events_vector);
             cl::Event& event = events_vector[0];
@@ -191,7 +205,8 @@ void watershed(int width, int height,
             watershed_minima_kernel_time += total_time;
         }
 #else
-        status = queue.enqueueNDRangeKernel(minima_kernel, NullRange, global, local);
+        status = queue.enqueueNDRangeKernel(minima_kernel, NullRange,
+                                            global, local);
 #endif
         queue.enqueueReadBuffer(counter, CL_TRUE, 0, sizeof(int), &new_val);
         c++;
@@ -231,7 +246,9 @@ void watershed(int width, int height,
 #ifdef OPENCL_PROFILE
         {
             VECTOR_CLASS<cl::Event> events_vector(1);
-            status = queue.enqueueNDRangeKernel(plateau_kernel, NullRange, global, local, __null, &events_vector[0]);
+            status = queue.enqueueNDRangeKernel(plateau_kernel, NullRange,
+                                                global, local, __null,
+                                                &events_vector[0]);
 
             cl::WaitForEvents(events_vector);
             cl::Event& event = events_vector[0];
@@ -242,7 +259,8 @@ void watershed(int width, int height,
             watershed_plateau_kernel_time += total_time;
         }
 #else
-        status = queue.enqueueNDRangeKernel(plateau_kernel, NullRange, global, local);
+        status = queue.enqueueNDRangeKernel(plateau_kernel, NullRange,
+                                            global, local);
 #endif
         queue.enqueueReadBuffer(counter, CL_TRUE, 0, sizeof(int), &new_val);
         c++;
@@ -296,7 +314,9 @@ void watershed(int width, int height,
 #ifdef OPENCL_PROFILE
         {
             VECTOR_CLASS<cl::Event> events_vector(1);
-            status = queue.enqueueNDRangeKernel(flood_kernel, NullRange, global, local, __null, &events_vector[0]);
+            status = queue.enqueueNDRangeKernel(flood_kernel, NullRange,
+                                                global, local, __null,
+                                                &events_vector[0]);
 
             cl::WaitForEvents(events_vector);
             cl::Event& event = events_vector[0];
@@ -307,11 +327,13 @@ void watershed(int width, int height,
             watershed_flood_kernel_time += total_time;
         }
 #else
-        status = queue.enqueueNDRangeKernel(flood_kernel, NullRange, global, local);
+        status = queue.enqueueNDRangeKernel(flood_kernel, NullRange,
+                                            global, local);
 #endif
 
 #ifdef OPENCL_PROFILE
-        queue.enqueueReadBuffer(counter, CL_TRUE, 0, sizeof(int), &new_val, __null, &last_event);
+        queue.enqueueReadBuffer(counter, CL_TRUE, 0, sizeof(int),
+                                &new_val, __null, &last_event);
 #else
         queue.enqueueReadBuffer(counter, CL_TRUE, 0, sizeof(int), &new_val);
 #endif
