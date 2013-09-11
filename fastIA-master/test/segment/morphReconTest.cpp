@@ -114,7 +114,7 @@ uint64 morphReconOcl(const std::string& marker_file,
         t1 = cci::common::event::timestampInUS();
 
         morphRecon<int, unsigned char>(device_marker, device_mask,
-                                       width, height, 2, 14);
+                                       width, height, 2, 4);
 
         t2 = cci::common::event::timestampInUS();
 
@@ -452,9 +452,9 @@ BOOST_AUTO_TEST_CASE(morphReconAllTest)
     std::cout << "###################### ";
     std::cout << "RUNNING TESTS USING OPENCL" << std::endl;
     testRunner(OPENCL);
-    std::cout << "###################### ";
-    std::cout << "RUNNING TESTS USING CUDA" << std::endl;
-    testRunner(CUDA);
+//    std::cout << "###################### ";
+//    std::cout << "RUNNING TESTS USING CUDA" << std::endl;
+//    testRunner(CUDA);
     std::cout << "###################### ";
     std::cout << "RUNNING TESTS USING CPU" << std::endl;
     testRunner(CPU);
