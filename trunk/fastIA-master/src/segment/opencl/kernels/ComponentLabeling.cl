@@ -1,6 +1,3 @@
-#define UF_BLOCK_SIZE_X 32
-#define UF_BLOCK_SIZE_Y 16
-
 int find(__local int* buf, int x)
 {
     while (x != buf[x])
@@ -81,7 +78,7 @@ void findAndUnionGlobal(__global int* buf, int g1, int g2)
 }
 
 
-__kernel void UF_local(__global int* label,
+__kernel void uf_local(__global int* label,
                        __global uchar* img,
                        __local int* s_buffer,
                        __local uchar* s_img,
@@ -166,7 +163,7 @@ __kernel void UF_local(__global int* label,
 }
 
 
-__kernel void UF_global(__global int* label,
+__kernel void uf_global(__global int* label,
                         __global uchar* img,
                         int w, int h, int connectivity)
 {
@@ -220,7 +217,7 @@ __kernel void UF_global(__global int* label,
     }
 }
 
-__kernel void UF_final(__global int* label,
+__kernel void uf_final(__global int* label,
                        __global uchar* img,
                        int w, int h, int bgval)
 {

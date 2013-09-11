@@ -366,7 +366,17 @@ __kernel void morph_recon_kernel(__global int* total_inserts,
         my_local_queue[0] = 0;
 
         // Try to get some work.
-        workUnit = dequeueElement(queue_data, queue_metadata, &loopIt, gotWork);
+
+        if(my_local_queue[0])
+        {
+            workUnit = my_local_queue[my_local_queue[0]];
+            my_local_queue[0]--;
+        }
+        else
+        {
+            workUnit = dequeueElement(queue_data, queue_metadata, &loopIt, gotWork);
+        }
+
         y = workUnit & 0xFFFF;
         x = workUnit >> 16;
 
