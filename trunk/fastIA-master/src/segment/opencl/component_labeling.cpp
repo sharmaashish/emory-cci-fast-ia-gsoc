@@ -22,7 +22,8 @@ void ccl(cl::Buffer img, cl::Buffer labels,
 
     std::string program_params = params_stream.str();
 
-    cl::Program& program = cache.getProgram("Watershed", program_params);
+    cl::Program& program = cache.getProgram("ComponentLabeling",
+                                            program_params);
 
     cl::Kernel uf_local_kernel(program, "uf_local");
     cl::Kernel uf_global_kernel(program, "uf_global");
@@ -34,6 +35,9 @@ void ccl(cl::Buffer img, cl::Buffer labels,
 
     size_t global_height = ((height + UF_BLOCK_SIZE_Y - 1)/UF_BLOCK_SIZE_Y)
                             * UF_BLOCK_SIZE_Y;
+
+    std::cout << "global width: " << global_width << std::endl;
+    std::cout << "global height: " << global_height << std::endl;
 
     cl::NDRange global(global_width, global_height);
     cl::NDRange local(UF_BLOCK_SIZE_X, UF_BLOCK_SIZE_Y);
@@ -55,22 +59,22 @@ void ccl(cl::Buffer img, cl::Buffer labels,
     queue.enqueueNDRangeKernel(uf_local_kernel, cl::NullRange,
                                global, local);
 
-    uf_global_kernel.setArg(0, labels);
-    uf_global_kernel.setArg(1, img);
-    uf_global_kernel.setArg(2, width);
-    uf_global_kernel.setArg(3, height);
-    uf_global_kernel.setArg(4, connectivity);
+//    uf_global_kernel.setArg(0, labels);
+//    uf_global_kernel.setArg(1, img);
+//    uf_global_kernel.setArg(2, width);
+//    uf_global_kernel.setArg(3, height);
+//    uf_global_kernel.setArg(4, connectivity);
 
-    queue.enqueueNDRangeKernel(uf_global_kernel, cl::NullRange,
-                               global, local);
+//    queue.enqueueNDRangeKernel(uf_global_kernel, cl::NullRange,
+//                               global, local);
 
-    uf_final_kernel.setArg(0, labels);
-    uf_final_kernel.setArg(1, img);
-    uf_final_kernel.setArg(2, width);
-    uf_final_kernel.setArg(3, height);
-    uf_final_kernel.setArg(4, bgval);
+//    uf_final_kernel.setArg(0, labels);
+//    uf_final_kernel.setArg(1, img);
+//    uf_final_kernel.setArg(2, width);
+//    uf_final_kernel.setArg(3, height);
+//    uf_final_kernel.setArg(4, bgval);
 
-    queue.enqueueNDRangeKernel(uf_final_kernel, cl::NullRange,
-                               global, local);
+//    queue.enqueueNDRangeKernel(uf_final_kernel, cl::NullRange,
+//                               global, local);
 
 }

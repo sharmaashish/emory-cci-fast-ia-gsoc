@@ -53,8 +53,8 @@ void findAndUnionGlobal(__global int* buf, int g1, int g2)
 
     do
     {
-        g1 = find(buf, g1);
-        g2 = find(buf, g2);
+        g1 = findGlobal(buf, g1);
+        g2 = findGlobal(buf, g2);
 
         // it should hold that g1 == buf[g1] and g2 == buf[g2] now
 
@@ -114,7 +114,7 @@ __kernel void uf_local(__global int* label,
 
     uchar v = s_img[block_index];
 
-    if (in_limits && threadIdx.x>0 && s_img[block_index-1] == v) {
+    if (in_limits && local_x > 0 && s_img[block_index-1] == v) {
         findAndUnion(s_buffer, block_index, block_index - 1);
     }
 
@@ -189,8 +189,8 @@ __kernel void uf_global(__global int* label,
         findAndUnionGlobal(label, global_index, global_index - w);
     }
 
-    if (in_limits && x>0 && threadIdx.x==0
-        && tex2D(imgtex, x-1, y) == v)
+    if (in_limits && x > 0 && local_x == 0
+        && img[global_index - 1] == v)
     {
         findAndUnionGlobal(label, global_index, global_index - 1);
     }
@@ -209,7 +209,7 @@ __kernel void uf_global(__global int* label,
 
 // upper right diagonal needs to be updated for the top and right lines.
         if (in_limits && x < w-1 && y > 0
-            && (threadIdx.y == 0 || threadIdx.x == UF_BLOCK_SIZE_X-1)
+            && (local_y == 0 || local_x == UF_BLOCK_SIZE_X-1)
             && img[global_index - w + 1] == v)
         {
             findAndUnionGlobal(label, global_index, global_index - w + 1);
@@ -231,6 +231,6 @@ __kernel void uf_final(__global int* label,
     if (in_limits)
     {
         label[global_index] =
-                (img[global_index] == 0 ? bgval : find(label, global_index));
+                (img[global_index] == 0 ? bgval : findGlobal(label, global_index));
     }
 }
