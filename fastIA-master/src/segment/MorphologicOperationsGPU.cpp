@@ -880,13 +880,14 @@ GpuMat bwlabel(const GpuMat& binaryImage, int connectivity, bool relab, Stream& 
 	CV_Assert(binaryImage.type() == CV_8U);
 	// only works for binary images.
 
-	GpuMat input = createContinuous(binaryImage.size(), binaryImage.type());
+    GpuMat input = createContinuous(binaryImage.size(), binaryImage.type());
 	stream.enqueueCopy(binaryImage, input);
 
 	GpuMat output = createContinuous(binaryImage.size(), CV_32SC1);
 
-	::nscale::gpu::CCL((unsigned char*)input.data, input.cols, input.rows, (int*)output.data, -1, connectivity, StreamAccessor::getStream(stream));
+    ::nscale::gpu::CCL((unsigned char*)input.data, input.cols, input.rows, (int*)output.data, -1, connectivity, StreamAccessor::getStream(stream));
 	stream.waitForCompletion();
+
 	if (relab == true) {
 		int j = ::nscale::gpu::relabel(output.cols, output.rows, (int*)output.data, -1, StreamAccessor::getStream(stream));
 		printf("gpu bwlabel num components = %d\n", j);

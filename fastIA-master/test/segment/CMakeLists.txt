@@ -26,7 +26,7 @@ file(MAKE_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/out)
 set(tests sample_test bwareopenTest deconvTest distTransformTest
     imfillTest imreconChunkTest watershedTest watershedNewTest watershedOpenCV #oclTest
     pixel-opsTest parallelQueueTest morphReconInitTest morphReconPropagationTest
-    morphReconTest morphReconSpeedupTest morphReconCPUTest morphReconCPUMulticoreTest cclTest)
+    morphReconTest morphReconSpeedupTest morphReconCPUTest morphReconCPUMulticoreTest cclTest cclCudaTest)
 
 foreach(test ${tests})
         add_executable(${test}_segment ${test}.cpp)

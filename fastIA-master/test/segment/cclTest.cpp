@@ -17,6 +17,8 @@
 
 #include "opencl/component_labeling.h"
 
+#include "UtilsCVImageIO.h"
+
 #define ITER_NUM 1
 
 
@@ -78,6 +80,8 @@ BOOST_AUTO_TEST_CASE(cclTest)
 
         queue.enqueueReadBuffer(d_output, CL_TRUE, 0,
                                  sizeof(int) * size, output.data);
+
+        cciutils::cv::normalizeLabels(output);
 
         cv::imwrite(DATA_OUT("ccl_output.png"), output);
 
