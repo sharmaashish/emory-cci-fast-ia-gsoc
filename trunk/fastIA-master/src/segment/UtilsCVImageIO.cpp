@@ -115,6 +115,38 @@ namespace cv {
 			const char *_image_name, const int _offsetX, const int _offsetY, const char* _source_tile_file_name) { throw_nogpu(); }
 #endif
 
+    void normalizeLabels(::cv::Mat labels)
+    {
+        std::map<int, int> color_map;
+
+        for(int i = 0; i < labels.size().width * labels.size().height; ++i)
+        {
+            int val = ((int*)labels.data)[i];
+
+            if(color_map.find(val) == color_map.end())
+            {
+                color_map[val] = color_map.size();
+            }
+        }
+
+        int step = 255 / color_map.size();
+
+        if(step == 0)
+            step = 1;
+
+        for(int i = 0; i < labels.size().width * labels.size().height; ++i)
+        {
+            int val = ((int*)labels.data)[i];
+
+            ((int*)labels.data)[i] = color_map[val] * step;
+
+//            if(color_map.find(val) == color_map.end())
+//            {
+//                color_map[val] = color_map.size();
+//            }
+        }
+    }
+
 
 }
 

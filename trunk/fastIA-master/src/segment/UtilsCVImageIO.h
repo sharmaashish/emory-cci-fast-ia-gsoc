@@ -64,6 +64,10 @@ public:
 
 };
 
+
+void normalizeLabels(::cv::Mat labels);
+
+
 }
 
 }
