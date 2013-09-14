@@ -234,3 +234,180 @@ __kernel void uf_final(__global int* label,
                 (img[global_index] == 0 ? bgval : findGlobal(label, global_index));
     }
 }
+
+
+// object_counter should be initialized to 1
+__kernel void relabel_first(__global int* label,
+                            __global uchar* roots,
+                            __global int* object_counter,
+                            int w, int h)
+{
+    int x = get_global_id(0);
+    int y = get_global_id(1);
+
+    if(x < w && y < h)
+    {
+        int global_index = x + y * w;
+
+        uchar is_root = (label[global_index] == global_index ? 1 : 0);
+
+        roots[global_index] = is_root;
+
+        if(is_root)
+        {
+            int val = atomic_inc(object_counter);
+            label[global_index] = val;
+        }
+    }
+}
+
+__kernel void relabel_second(__global int* label,
+                             __global uchar* roots,
+                             int w, int h, int bgval)
+{
+    int x = get_global_id(0);
+    int y = get_global_id(1);
+
+    if(x < w && y < h)
+    {
+        int global_index = x + y * w;
+
+        uchar is_root = roots[global_index];
+
+        int target = label[global_index];
+
+        if (target == bgval)
+        {
+            label[global_index] = 0;
+        }
+        else if (!is_root)
+        {
+            label[global_index] = label[target];
+        }
+    }
+}
+
+__kernel void area_threshold_reset(__global int* area_counters,
+                                    int w, int h)
+{
+    int x = get_global_id(0);
+    int y = get_global_id(1);
+
+    if(x < w && y < h)
+    {
+        int global_index = x + y * w;
+        area_counters[global_index] = 0;
+    }
+}
+
+
+__kernel void area_threshold_count(__global int* label,
+                                    __global int* area_counters,
+                                    int w, int h, int bgval)
+{
+    int x = get_global_id(0);
+  //  int y = get_global_id(1);
+
+    if(x < w)
+    {
+        int global_index = x;
+        int target = label[global_index];
+
+        int prev_target = target;
+
+        int counter = 1;
+
+        for(int i = 1; i < h; ++i)
+        {
+            global_index = x + i * w;
+            target = label[global_index];
+
+            if(target == prev_target)
+            {
+                counter++;
+            }
+            else
+            {
+                if(prev_target != bgval)
+                {
+                    atomic_add(&area_counters[prev_target], counter);
+                }
+                counter = 1;
+                prev_target = target;
+            }
+        }
+
+        if(prev_target != bgval)
+            atomic_add(&area_counters[prev_target], counter);
+    }
+}
+
+__kernel void area_threshold(__global int* label,
+                              __global int* area_counters,
+                              int min_size, int max_size,
+                              int w, int h, int bgval)
+{
+    int x = get_global_id(0);
+    int y = get_global_id(1);
+
+    if(x < w && y < h)
+    {
+        int global_index = x + y * w;
+        int target = label[global_index];
+
+        int area = area_counters[target];
+
+        if(area < min_size || area > max_size)
+        {
+            label[global_index] = bgval;
+        }
+    }
+}
+
+__kernel void b_box_init(__global int* x_min,
+                         __global int* x_max,
+                         __global int* y_min,
+                         __global int* y_max,
+                         int w, int h)
+{
+    int x = get_global_id(0);
+    int y = get_global_id(1);
+
+    if(x < w && y < h)
+    {
+        int global_index = x + y * w;
+
+        x_min[global_index] = 0;
+        y_min[global_index] = 0;
+
+        x_max[global_index] = (0xFFFFFFFF >> 1);
+        y_max[global_index] = (0xFFFFFFFF >> 1);
+    }
+}
+
+__kernel void b_box_horizontal(__global int* label,
+                               __global int* x_min,
+                               __global int* x_max,
+                               int w, int h, int bgval)
+{
+
+}
+
+__kernel void b_box_vertical(__global int* label,
+                             __global int* x_min,
+                             __global int* x_max,
+                             int w, int h, int bgval)
+{
+
+}
+
+__kernel void b_box_pack(__global int* label,
+                         __global int* counter,
+                         __global int* x_min,
+                         __global int* x_max,
+                         __global int* y_min,
+                         __global int* y_max,
+                         int w, int h)
+{
+
+}

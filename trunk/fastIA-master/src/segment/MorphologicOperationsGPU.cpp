@@ -995,8 +995,15 @@ GpuMat bwareaopen(const GpuMat& binaryImage, bool labeled, bool flatten, int min
 	if (labeled == false) {
 		GpuMat temp = createContinuous(binaryImage.size(), CV_32SC1);
 		::nscale::gpu::CCL((unsigned char*)input.data, input.cols, input.rows, (int*)temp.data, -1, connectivity, StreamAccessor::getStream(stream));
-		count = ::nscale::gpu::areaThreshold(temp.cols, temp.rows, (int*)temp.data, -1, minSize, maxSize, StreamAccessor::getStream(stream));
-		printf("inside bwareaopen: count unlabeled = %d\n", count);
+
+        uint64 t1, t2;
+        t1 = cci::common::event::timestampInUS();
+        count = ::nscale::gpu::areaThreshold(temp.cols, temp.rows, (int*)temp.data, -1, minSize, maxSize, StreamAccessor::getStream(stream));
+        t2 = cci::common::event::timestampInUS();
+
+        std::cout << "threshold time: " << t2-t1 << std::endl;
+
+        printf("inside bwareaopen: count unlabeled = %d\n", count);
 		if (flatten == true) output = ::nscale::gpu::PixelOperations::threshold(temp, 0, true, std::numeric_limits<int>::max(), true, stream);
 		else output = temp;
 		stream.waitForCompletion();
