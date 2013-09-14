@@ -30,7 +30,11 @@
 
 BOOST_AUTO_TEST_CASE(cclTest)
 {
-    const std::string binary_image_file = DATA_IN("cell_binary_mask.png");
+    //const std::string binary_image_file = DATA_IN("cell_binary_mask.png");
+//    const std::string binary_image_file = DATA_IN("sizePhantom.png");
+
+    const std::string binary_image_file = DATA_IN("braintumor/astroII.1.ndpi-0000008192-0000008192.mask.png");
+
 
     uint64 total_time = 0;
 
@@ -62,16 +66,28 @@ BOOST_AUTO_TEST_CASE(cclTest)
 
         std::cout << "runnging CCL" << std::endl;
 
-        uint64 t1, t2;
+        uint64 t1, t2, t3, t4;
 
         t1 = cci::common::event::timestampInUS();
 
-        ccl(d_image, d_output, width, height, 0, 4);
+        ccl(d_image, d_output, width, height, -1, 4);
+
+        t3 = cci::common::event::timestampInUS();
+        area_threshold(d_output, width, height, -1, 150, std::numeric_limits<int>::max());
+        queue.enqueueBarrier();
+        t4 = cci::common::event::timestampInUS();
+
+        int object_count = relabel(d_output, width, height, -1);
 
         t2 = cci::common::event::timestampInUS();
 
         uint64 exec_time = t2 - t1;
         total_time += exec_time;
+
+        uint64 threshold_time = t4-t3;
+        std::cout << "threshold time: " << threshold_time << std::endl;
+
+        std::cout << "objects count: " << object_count << std::endl;
 
         //std::cout << "MR finsihed" << std::endl;
         //std::cout << "MR time: " << exec_time << "us" << std::endl;

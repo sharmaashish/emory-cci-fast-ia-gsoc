@@ -415,12 +415,12 @@ int relabel(int w, int h, int* d_label, int bgval, cudaStream_t stream) {
 //	printf("new label copied to host = %d\n", countvec[0]);
 
 		//STOP_TIME_T;
-	//printf("   uf relabel get count: %f\n", ett);
+    //printf("   uf relabel get count: %f\n", ett);
  //START_TIME_T;
-	thrust::transform_if(label, label+w*h, newlabel.begin(), roots.begin(), 
-		 label,
-		 thrust::project2nd<int, int>(),
-	 	 greaterThanK<int>(0));
+    thrust::transform_if(label, label+w*h, newlabel.begin(), roots.begin(),
+         label,
+         thrust::project2nd<int, int>(),
+         greaterThanK<int>(0));
 	//STOP_TIME_T;
 	//printf("   uf relabel reset root: %f\n", ett);
  // now flatten
@@ -596,10 +596,10 @@ int areaThreshold(int w, int h, int* d_label, int bgval, int minSize, int maxSiz
 //		START_TIME_T;
 	thrust::device_vector<int> area(fgcount, 1);
 	thrust::pair<thrust::device_vector<int>::iterator,
-	 	thrust::device_vector<int>::iterator> newend, newend2;
+                 thrust::device_vector<int>::iterator> newend, newend2;
 	typedef thrust::tuple<int, int> XY;
 	thrust::device_vector<int> nl(fgcount);
-	thrust::device_vector<int> newarea(fgcount, 0);
+    thrust::device_vector<int> newarea(fgcount, 0);
 
 //		STOP_TIME_T;
 //	printf("   uf area test alloc 1: %f\n", ett);
@@ -616,7 +616,7 @@ int areaThreshold(int w, int h, int* d_label, int bgval, int minSize, int maxSiz
 
 	// then we sort by key.  faster when fewer, larger objects
 //	START_TIME_T;
-	thrust::sort_by_key(nl.begin(), newend.first, newarea.begin());
+    thrust::sort_by_key(nl.begin(), newend.first, newarea.begin());
 //		STOP_TIME_T;
 //	printf("   uf area test sort 1: %f\n", ett);
 
