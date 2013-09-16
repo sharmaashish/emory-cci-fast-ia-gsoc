@@ -281,8 +281,11 @@ void bounding_box(cl::Buffer labels, int width, int height,
     b_box_horizontal_kernel.setArg(4, height);
     b_box_horizontal_kernel.setArg(5, bgval);
 
+    cl::NDRange global_t(1, global_height);
+    cl::NDRange local_t(1, UF_BLOCK_SIZE_Y);
+
     queue.enqueueNDRangeKernel(b_box_horizontal_kernel, cl::NullRange,
-                               global, local);
+                               global_t, local_t);
 
     queue.enqueueBarrier();
 
@@ -293,8 +296,11 @@ void bounding_box(cl::Buffer labels, int width, int height,
     b_box_vertical_kernel.setArg(4, height);
     b_box_vertical_kernel.setArg(5, bgval);
 
+    cl::NDRange global_t_1(global_width, 1);
+    cl::NDRange local_t_1(UF_BLOCK_SIZE_Y, 1);
+
     queue.enqueueNDRangeKernel(b_box_vertical_kernel, cl::NullRange,
-                               global, local);
+                               global_t_1, local_t_1);
 
     b_box_pack_kernel.setArg(0, labels);
     b_box_pack_kernel.setArg(1, counter);
