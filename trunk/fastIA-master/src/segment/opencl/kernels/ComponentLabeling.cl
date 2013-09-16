@@ -390,15 +390,105 @@ __kernel void b_box_horizontal(__global int* label,
                                __global int* x_max,
                                int w, int h, int bgval)
 {
+    int y = get_global_id(1);
 
+    if(y < h)
+    {
+        int global_index = w * y;
+        int target = label[global_index];
+
+        int prev_target = target;
+
+        int pos_min = 0;
+        int pos_max = 0;
+
+       // int counter = 1;
+
+        for(int i = 1; i < w; ++i)
+        {
+            global_index = w * y + i;
+            target = label[global_index];
+
+            if(target == prev_target)
+            {
+              //  counter++;
+                pos_max++;
+            }
+            else
+            {
+                if(prev_target != bgval)
+                {
+                    //atomic_add(&area_counters[prev_target], counter);
+                    atomic_min(&x_min[prev_target], pos_min);
+                    atomic_max(&x_max[prev_target], pos_max);
+                }
+                //counter = 1;
+                x_min = i;
+                x_max = i;
+                prev_target = target;
+            }
+        }
+
+        if(prev_target != bgval)
+        {
+            atomic_min(&x_min[prev_target], pos_min);
+            atomic_max(&x_max[prev_target], pos_max);
+        }
+    }
 }
 
 __kernel void b_box_vertical(__global int* label,
-                             __global int* x_min,
-                             __global int* x_max,
+                             __global int* y_min,
+                             __global int* y_max,
                              int w, int h, int bgval)
 {
 
+    int x = get_global_id(0);
+  //  int y = get_global_id(1);
+
+    if(x < w)
+    {
+        int global_index = x;
+        int target = label[global_index];
+
+        int prev_target = target;
+
+        int pos_min = 0;
+        int pos_max = 0;
+
+       // int counter = 1;
+
+        for(int i = 1; i < h; ++i)
+        {
+            global_index = x + i * w;
+            target = label[global_index];
+
+            if(target == prev_target)
+            {
+              //  counter++;
+                pos_max++;
+            }
+            else
+            {
+                if(prev_target != bgval)
+                {
+                    //atomic_add(&area_counters[prev_target], counter);
+                    atomic_min(&y_min[prev_target], pos_min);
+                    atomic_max(&y_max[prev_target], pos_max);
+                }
+                //counter = 1;
+                y_min = i;
+                y_max = i;
+                prev_target = target;
+            }
+        }
+
+        if(prev_target != bgval)
+        {
+            atomic_min(&y_min[prev_target], pos_min);
+            atomic_max(&y_max[prev_target], pos_max);
+        }
+    }
 }
 
 __kernel void b_box_pack(__global int* label,
@@ -409,5 +499,37 @@ __kernel void b_box_pack(__global int* label,
                          __global int* y_max,
                          int w, int h)
 {
+
+    int x = get_global_id(0);
+    int y = get_global_id(1);
+
+    if(x < w && y < h)
+    {
+        int global_index = x + y * w;
+
+        uchar is_root = (label[global_index] == global_index ? 1 : 0);
+
+        if(is_root)
+        {
+            int val;
+
+            while(1)
+            {
+                val = atomic_inc(counter);
+
+                if(val == global_index  || label[val] != val)
+                {
+                    x_min[val] = x_min[global_index];
+                    x_max[val] = x_max[global_index];
+
+                    y_min[val] = y_min[global_index];
+                    y_max[val] = y_max[global_index];
+
+                    break;
+                }
+            }
+
+        }
+    }
 
 }
