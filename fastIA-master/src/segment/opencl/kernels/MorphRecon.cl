@@ -8,7 +8,7 @@
 
 #define DEBUG_PRINT
 
-inline int propagate(__global MARKER_TYPE* marker, __global MASK_TYPE* mask,
+inline int propagate(__global MARKER_TYPE* marker, __global const MASK_TYPE* mask,
                      int x, int y, int ncols, MARKER_TYPE pval)
 {
     int returnValue = -1;
@@ -28,7 +28,7 @@ inline int propagate(__global MARKER_TYPE* marker, __global MASK_TYPE* mask,
 
 
 __kernel void scan_forward_rows_kernel(__global MARKER_TYPE* marker,
-                                       __global MASK_TYPE* mask,
+                                       __global const MASK_TYPE* mask,
                                        __global int* changed_global,
                                        __local MARKER_TYPE* marker_local,
                                        __local MASK_TYPE* mask_local,
@@ -91,7 +91,6 @@ __kernel void scan_forward_rows_kernel(__global MARKER_TYPE* marker,
         {
             marker[idx_global] = marker_local[idx_local];
         }
- //       barrier(CLK_LOCAL_MEM_FENCE);
     }
 
     if(changed)
@@ -99,7 +98,7 @@ __kernel void scan_forward_rows_kernel(__global MARKER_TYPE* marker,
 }
 
 __kernel void scan_backward_rows_kernel(__global MARKER_TYPE* marker,
-                                       __global MASK_TYPE* mask,
+                                       __global const MASK_TYPE* mask,
                                        __global int* changed_global,
                                        __local MARKER_TYPE* marker_local,
                                        __local MASK_TYPE* mask_local,
@@ -167,7 +166,6 @@ __kernel void scan_backward_rows_kernel(__global MARKER_TYPE* marker,
         {
             marker[idx_global] = marker_local[idx_local];
         }
- //       barrier(CLK_LOCAL_MEM_FENCE);
     }
 
     if(changed)
@@ -175,7 +173,7 @@ __kernel void scan_backward_rows_kernel(__global MARKER_TYPE* marker,
 }
 
 __kernel void scan_forward_columns_kernel(__global MARKER_TYPE* marker,
-                                       __global MASK_TYPE* mask,
+                                       __global const MASK_TYPE* mask,
                                        __global int* changed_global,
                                        int width, int height)
 {
@@ -215,7 +213,7 @@ __kernel void scan_forward_columns_kernel(__global MARKER_TYPE* marker,
 }
 
 __kernel void scan_backward_columns_kernel(__global MARKER_TYPE* marker,
-                                       __global MASK_TYPE* mask,
+                                       __global const MASK_TYPE* mask,
                                        __global int* changed_global,
                                        int width, int height)
 {
@@ -256,7 +254,7 @@ __kernel void scan_backward_columns_kernel(__global MARKER_TYPE* marker,
 
 
 __kernel void init_queue_kernel(__global MARKER_TYPE* marker,
-                                __global MASK_TYPE* mask,
+                                __global const MASK_TYPE* mask,
                                 __global int* queue_data,
                                 volatile __global int* queue_size,
                                 int width, int height)
@@ -318,12 +316,6 @@ __kernel void init_queue_kernel(__global MARKER_TYPE* marker,
                 is_candidate = 1;
             }
         }
-//        if(is_candidate)
-//        {
-//            printf("IS CANDIDATE!\n");
-//            printf("x: %d\n", idx % width);
-//            printf("y: %d\n", idx / width);;
-//        }
     }
 
     if(is_candidate)
@@ -337,7 +329,7 @@ __kernel void init_queue_kernel(__global MARKER_TYPE* marker,
 
 __kernel void morph_recon_kernel(__global int* total_inserts,
                                  __global MARKER_TYPE* marker,
-                                 __global MASK_TYPE* mask,
+                                 __global const MASK_TYPE* mask,
                                  int ncols, int nrows,
                                  QUEUE_DATA,
                                  QUEUE_METADATA,
@@ -353,14 +345,12 @@ __kernel void morph_recon_kernel(__global int* total_inserts,
     int group_id = get_group_id(0);
     int group_size = get_local_size(0);
 
-  //  setCurrentQueue(QUEUE_WORKSPACE_ARG, group_id, group_id);
-
     int loopIt = 0;
     int workUnit = -1;
     int x, y;
 
     __local int* my_local_queue = local_queue + LOCAL_QUEUE_SIZE * local_id;
-//int counter = 0;
+
     do{
         /* queue occupancy initialization */
         my_local_queue[0] = 0;
@@ -437,7 +427,6 @@ __kernel void morph_recon_kernel(__global int* total_inserts,
         queueElement(queue_data, queue_metadata, my_local_queue,
                         prefix_sum_input, prefix_sum_output);
 
-      //  printf("turn");
     }while(workUnit != -2);
 
     total_inserts[group_id] = TOTAL_INSERTS(group_id);

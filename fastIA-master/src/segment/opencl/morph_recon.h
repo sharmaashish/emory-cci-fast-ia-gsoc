@@ -65,7 +65,7 @@ void morphRecon(cl::Buffer marker, cl::Buffer mask, int width, int height,
         int queue_total_size = width * height;
         int queue_data_size;
 
-        cl::Buffer device_queue_data(context, CL_TRUE,
+        cl::Buffer device_queue_data(context, CL_MEM_READ_WRITE,
                                      sizeof(int) * queue_total_size);
 
         morphReconInitQueue(marker, mask, device_queue_data,
@@ -87,7 +87,7 @@ void morphRecon(cl::Buffer marker, cl::Buffer mask, int width, int height,
         int total_queues_size = single_queue_size * blocks_num;
 
         // allocating device queues
-        cl::Buffer device_queues(context, CL_TRUE,
+        cl::Buffer device_queues(context, CL_MEM_READ_WRITE,
                                  sizeof(int) * total_queues_size);
 
         std::vector<int> nums_of_elements;

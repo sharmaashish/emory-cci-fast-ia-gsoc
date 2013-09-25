@@ -107,7 +107,7 @@ void morphReconInitScan(cl::Buffer marker, cl::Buffer mask,
 
     /* allocating buffers */
 
-    cl::Buffer changed(context, CL_TRUE, sizeof(int));
+    cl::Buffer changed(context, CL_MEM_READ_WRITE, sizeof(int));
 
     cl::LocalSpaceArg marker_local = cl::__local(sizeof(MARKER_TYPE)
                                                  * INIT_SCAN_X_THREADS_X
@@ -211,7 +211,7 @@ void morphReconInitQueue(cl::Buffer marker, cl::Buffer mask,
 
     queue_size = 0;
 
-    cl::Buffer queue_size_buff(context, CL_TRUE, sizeof(int));
+    cl::Buffer queue_size_buff(context, CL_MEM_READ_WRITE, sizeof(int));
     queue.enqueueWriteBuffer(queue_size_buff, CL_TRUE, 0,
                            sizeof(int), &queue_size);
 

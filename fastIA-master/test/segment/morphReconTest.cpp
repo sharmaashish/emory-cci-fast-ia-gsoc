@@ -101,8 +101,10 @@ uint64 morphReconOcl(const std::string& marker_file,
 
         cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
-        cl::Buffer device_marker(context, CL_TRUE, sizeof(int) * size);
-        cl::Buffer device_mask(context, CL_TRUE, sizeof(unsigned char) * size);
+        cl::Buffer device_marker(context, CL_MEM_READ_WRITE,
+                                 sizeof(int) * size);
+        cl::Buffer device_mask(context, CL_MEM_READ_ONLY,
+                               sizeof(unsigned char) * size);
 
         queue.enqueueWriteBuffer(device_marker, CL_TRUE, 0,
                                  sizeof(int) * size, markerInt.data);
