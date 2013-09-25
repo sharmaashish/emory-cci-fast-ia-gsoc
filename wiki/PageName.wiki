@@ -19,7 +19,7 @@ MR performance comparison for OpenCL, Nvidia Cuda, OpenMP and standard serial CP
 
 || || OPENCL || CPU SERIAL || CPU MULTICORE || *ratio* ||
 || Intel Core Duo T9300 2.5GHz || 50s 495ms || 7s 113ms || 4s 134ms || 0,082 ||
-|| Intel Xeon E5649 2.5GHz || 11s 385ms || 5s 340ms || 6s 29ms || 0,47 ||
+|| Intel Xeon E5649 2.5GHz || 11s 385ms || 5s 340ms || 5s 480ms || 0,47 ||
 
 ===Possible reasons of poor performance for OpenCL implementation using CPU===
  * Using local queues per work-item and moving them to higher level queue using prefix sum is probably a substantial reason. On CPU architectures every work-group is executed by single thread, from beginning to the end. It cause that there is no concurrency between work-times in work-group. For CPU version, local per-work-item queues should be replaced by per-work-group queues. Each work-item could add data to local queue by simply increasing shared index.
