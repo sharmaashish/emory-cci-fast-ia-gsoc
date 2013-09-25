@@ -13,7 +13,7 @@ MR performance comparison for OpenCL, Nvidia Cuda, OpenMP and standard serial CP
 || GeForce GT 460 || 1s 380ms || 1s 228ms  || 0,89 || 
 || GeForce GT 430 || 4s 912ms || 4s 223ms  || 0,86 || 
 || Tesla C2070 || 1s 146ms || 0s 897ms || 0,79 || 
-|| AMD FirePro™ W9000 || || || ||
+|| AMD FirePro™ W9000 || 2s 652ms || || ||
 
 == OpenCL/serial CPU/OpenMP on CPU ==
 
