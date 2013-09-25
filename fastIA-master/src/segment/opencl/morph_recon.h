@@ -12,7 +12,9 @@
 #include <vector>
 
 //#define DEBUG_PRINT
-#define WARNINGS_AS_ERRORS
+
+/* This flag causes error on GOTO on AMD*/
+//#define WARNINGS_AS_ERRORS
 
 #define INIT_SCAN_X_THREADS_X 16
 #define INIT_SCAN_X_THREADS_Y 16

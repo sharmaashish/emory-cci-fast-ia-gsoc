@@ -1,10 +1,8 @@
 #ifndef PARALLEL_QUEUE_H
 #define PARALLEL_QUEUE_H
 
-#define QUEUE_MAX_NUM_BLOCKS	70
-#define QUEUE_NUM_THREADS	    512
-
-//#define QUEUE_METATADATA_SIZE   10
+#define QUEUE_MAX_NUM_BLOCKS	        70
+#define PREFERRED_QUEUE_NUM_THREADS	    512
 
 #include <CL/cl.hpp>
 #include "utils/ocl_program_cache.h"

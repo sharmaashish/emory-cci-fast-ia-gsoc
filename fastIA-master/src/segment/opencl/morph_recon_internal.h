@@ -9,9 +9,6 @@ static std::stringstream& initMorphReconProgramParams()
 
     if(!initialized)
     {
-        params_stream << "-DQUEUE_MAX_NUM_BLOCKS=" << QUEUE_MAX_NUM_BLOCKS;
-        params_stream << " -DQUEUE_NUM_THREADS=" << QUEUE_NUM_THREADS;
-
 #ifdef WARNINGS_AS_ERRORS
         params_stream << " -Werror";
 #endif
@@ -31,6 +28,23 @@ static std::string morphReconTypeParams()
             + " -DMASK_TYPE=" + TypeResolver<MASK_TYPE>::type_as_string;
 
     return typeParam;
+}
+
+int getQueueNumThreads(cl::CommandQueue queue)
+{
+    cl::Device device = queue.getInfo<CL_QUEUE_DEVICE>();
+
+    int max_group_size = device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
+
+//#ifdef DEBUG_PRINT
+    std::cout << "CL_DEVICE_MAX_WORK_ITEM_SIZES: "
+              << max_group_size << std::endl;
+//#endif
+
+    if(PREFERRED_QUEUE_NUM_THREADS > max_group_size)
+        return max_group_size;
+    else
+        return PREFERRED_QUEUE_NUM_THREADS;
 }
 
 
@@ -262,16 +276,18 @@ void morphReconQueuePropagation(cl::Buffer queue_data,
     cl::Buffer device_total_elements(context, CL_TRUE,
                                      blocks_num * sizeof(int));
 
+    int queue_num_threads = getQueueNumThreads(queue);
+
     cl::LocalSpaceArg local_queue
-            = cl::__local(sizeof(int)* QUEUE_NUM_THREADS * 5);
+            = cl::__local(sizeof(int)* queue_num_threads * 5);
     cl::LocalSpaceArg reduction_buffer
-            = cl::__local(sizeof(int) * QUEUE_NUM_THREADS);
+            = cl::__local(sizeof(int) * queue_num_threads);
     cl::LocalSpaceArg got_work
             = cl::__local(sizeof(int));
     cl::LocalSpaceArg prefix_sum_input
-            = cl::__local(sizeof(int) * QUEUE_NUM_THREADS);
+            = cl::__local(sizeof(int) * queue_num_threads);
     cl::LocalSpaceArg prefix_sum_output
-            = cl::__local(sizeof(int) * QUEUE_NUM_THREADS);
+            = cl::__local(sizeof(int) * queue_num_threads);
 
     morph_recon_kernel.setArg(0, device_total_elements);
     morph_recon_kernel.setArg(1, marker);
@@ -286,8 +302,8 @@ void morphReconQueuePropagation(cl::Buffer queue_data,
     morph_recon_kernel.setArg(10, prefix_sum_input);
     morph_recon_kernel.setArg(11, prefix_sum_output);
 
-    cl::NDRange global(QUEUE_NUM_THREADS * blocks_num, 1);
-    cl::NDRange local(QUEUE_NUM_THREADS, 1);
+    cl::NDRange global(queue_num_threads * blocks_num, 1);
+    cl::NDRange local(queue_num_threads, 1);
 
 #ifdef DEBUG_PRINT
     std::cout << "running morphological reconstruction kernel..."
