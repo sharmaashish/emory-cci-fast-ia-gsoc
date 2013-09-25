@@ -54,17 +54,11 @@ void dequeueTest(cl::Buffer queue_data, cl::Buffer queue_metadata,
 {
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
-    std::stringstream params_stream;
-    params_stream << "-DQUEUE_MAX_NUM_BLOCKS=" << QUEUE_MAX_NUM_BLOCKS << " ";
-    params_stream << "-DQUEUE_NUM_THREADS=" << QUEUE_NUM_THREADS;
-
-    std::string program_params = params_stream.str();
-
     std::vector<std::string> sources;
     sources.push_back("ParallelQueue");
     sources.push_back("ParallelQueueTests");
 
-    cl::Program& program = cache.getProgram(sources, program_params);
+    cl::Program& program = cache.getProgram(sources);
 
     cl::Kernel dequeue_test_kernel(program, "dequeue_test");
 
@@ -75,9 +69,17 @@ void dequeueTest(cl::Buffer queue_data, cl::Buffer queue_metadata,
     dequeue_test_kernel.setArg(2, device_result);
     dequeue_test_kernel.setArg(3, local_mem);
 
+    cl::Device device = queue.getInfo<CL_QUEUE_DEVICE>();
+    int max_group_size = device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
+
+    int queue_num_threads = 512;
+
+    if(queue_num_threads > max_group_size)
+        queue_num_threads = max_group_size;
+
     cl::NDRange nullRange;
-    cl::NDRange global(QUEUE_NUM_THREADS, 1);
-    cl::NDRange local(QUEUE_NUM_THREADS, 1);
+    cl::NDRange global(queue_num_threads, 1);
+    cl::NDRange local(queue_num_threads, 1);
 
     cl_int status = queue.enqueueNDRangeKernel(dequeue_test_kernel,
                                                nullRange, global, local);
@@ -91,17 +93,11 @@ void sumTest(cl::Buffer queue_data, cl::Buffer queue_metadata,
 {
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
-    std::stringstream params_stream;
-    params_stream << "-DQUEUE_MAX_NUM_BLOCKS=" << QUEUE_MAX_NUM_BLOCKS << " ";
-    params_stream << "-DQUEUE_NUM_THREADS=" << QUEUE_NUM_THREADS;
-
-    std::string program_params = params_stream.str();
-
     std::vector<std::string> sources;
     sources.push_back("ParallelQueue");
     sources.push_back("ParallelQueueTests");
 
-    cl::Program& program = cache.getProgram(sources, program_params);
+    cl::Program& program = cache.getProgram(sources);
 
     cl::Kernel sum_test_kernel(program, "sum_test");
 
@@ -112,16 +108,22 @@ void sumTest(cl::Buffer queue_data, cl::Buffer queue_metadata,
 
     std::cout << "warp size: " << warp_size << std::endl;
 
+    int max_group_size = device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
+    int queue_num_threads = 512;
+
+    if(queue_num_threads > max_group_size)
+        queue_num_threads = max_group_size;
+
     cl::LocalSpaceArg local_queue
-            = cl::__local(sizeof(int) * QUEUE_NUM_THREADS * 2);
+            = cl::__local(sizeof(int) * queue_num_threads * 2);
     cl::LocalSpaceArg reduction_buffer
-            = cl::__local(sizeof(int) * QUEUE_NUM_THREADS);
+            = cl::__local(sizeof(int) * queue_num_threads);
     cl::LocalSpaceArg got_work
             = cl::__local(sizeof(int));
     cl::LocalSpaceArg prefix_sum_input
-            = cl::__local(sizeof(int) * QUEUE_NUM_THREADS);
+            = cl::__local(sizeof(int) * queue_num_threads);
     cl::LocalSpaceArg prefix_sum_output
-            = cl::__local(sizeof(int) * QUEUE_NUM_THREADS);
+            = cl::__local(sizeof(int) * queue_num_threads);
 
     sum_test_kernel.setArg(0, queue_data);
     sum_test_kernel.setArg(1, queue_metadata);
@@ -134,8 +136,8 @@ void sumTest(cl::Buffer queue_data, cl::Buffer queue_metadata,
     sum_test_kernel.setArg(8, prefix_sum_output);
 
     cl::NDRange nullRange;
-    cl::NDRange global(QUEUE_NUM_THREADS, 1);
-    cl::NDRange local(QUEUE_NUM_THREADS, 1);
+    cl::NDRange global(queue_num_threads, 1);
+    cl::NDRange local(queue_num_threads, 1);
 
     cl_int status = queue.enqueueNDRangeKernel(sum_test_kernel,
                                                nullRange, global, local);
@@ -147,28 +149,30 @@ void bigLocalQueuesTest(cl::Buffer queue_data, cl::Buffer queue_metadata,
 {
     cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
-    std::stringstream params_stream;
-    params_stream << "-DQUEUE_MAX_NUM_BLOCKS=" << QUEUE_MAX_NUM_BLOCKS << " ";
-    params_stream << "-DQUEUE_NUM_THREADS=" << QUEUE_NUM_THREADS;
-
-    std::string program_params = params_stream.str();
-
     std::vector<std::string> sources;
     sources.push_back("ParallelQueue");
     sources.push_back("ParallelQueueTests");
 
-    cl::Program& program = cache.getProgram(sources, program_params);
+    cl::Program& program = cache.getProgram(sources);
 
     cl::Kernel big_local_queues_test(program, "big_local_queues_test");
 
+    cl::Device device = queue.getInfo<CL_QUEUE_DEVICE>();
+    int max_group_size = device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
+
+    int queue_num_threads = 512;
+
+    if(queue_num_threads > max_group_size)
+        queue_num_threads = max_group_size;
+
     cl::LocalSpaceArg local_queue
-            = cl::__local(sizeof(int) * QUEUE_NUM_THREADS * 5);
+            = cl::__local(sizeof(int) * queue_num_threads * 5);
     cl::LocalSpaceArg got_work
             = cl::__local(sizeof(int));
     cl::LocalSpaceArg prefix_sum_input
-            = cl::__local(sizeof(int) * QUEUE_NUM_THREADS);
+            = cl::__local(sizeof(int) * queue_num_threads);
     cl::LocalSpaceArg prefix_sum_output
-            = cl::__local(sizeof(int) * QUEUE_NUM_THREADS);
+            = cl::__local(sizeof(int) * queue_num_threads);
 
     big_local_queues_test.setArg(0, queue_data);
     big_local_queues_test.setArg(1, queue_metadata);
@@ -179,8 +183,8 @@ void bigLocalQueuesTest(cl::Buffer queue_data, cl::Buffer queue_metadata,
     big_local_queues_test.setArg(6, prefix_sum_output);
 
     cl::NDRange nullRange;
-    cl::NDRange global(QUEUE_NUM_THREADS, 1);
-    cl::NDRange local(QUEUE_NUM_THREADS, 1);
+    cl::NDRange global(queue_num_threads, 1);
+    cl::NDRange local(queue_num_threads, 1);
 
    // std::cout << "enqueuing big_local_queues_test kernel" << std::endl;
 

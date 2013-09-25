@@ -474,18 +474,18 @@ BOOST_AUTO_TEST_CASE(morphReconAllTest)
     std::cout << "###################### ";
     std::cout << "RUNNING TESTS USING OPENCL" << std::endl;
     testRunner(OPENCL);
-    std::cout << "###################### ";
-    std::cout << "RUNNING TESTS USING CUDA" << std::endl;
-    testRunner(CUDA);
-    std::cout << "###################### ";
-    std::cout << "RUNNING TESTS USING CPU" << std::endl;
-    testRunner(CPU);
-    std::cout << "###################### ";
-    std::cout << "RUNNING TESTS USING CPU MULTICORE" << std::endl;
-    testRunner(CPU_MULTICORE);
+//    std::cout << "###################### ";
+//    std::cout << "RUNNING TESTS USING CUDA" << std::endl;
+//    testRunner(CUDA);
+//    std::cout << "###################### ";
+//    std::cout << "RUNNING TESTS USING CPU" << std::endl;
+//    testRunner(CPU);
+//    std::cout << "###################### ";
+//    std::cout << "RUNNING TESTS USING CPU MULTICORE" << std::endl;
+//    testRunner(CPU_MULTICORE);
 
-    std::cout << "###################### ";
-    std::cout << "TESTS FINISHED" << std::endl;
+//    std::cout << "###################### ";
+//    std::cout << "TESTS FINISHED" << std::endl;
 }
 
 
