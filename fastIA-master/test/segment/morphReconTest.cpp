@@ -446,24 +446,32 @@ void testRunner(MR_TYPE type)
 
 BOOST_AUTO_TEST_CASE(morphReconOclTest)
 {
+    std::cout << "###################### ";
+    std::cout << "RUNNING TESTS USING OPENCL" << std::endl;
     testRunner(OPENCL);
 }
 
 
 BOOST_AUTO_TEST_CASE(morphReconCudaTest)
 {
+    std::cout << "###################### ";
+    std::cout << "RUNNING TESTS USING CUDA" << std::endl;
     testRunner(CUDA);
 }
 
 
 BOOST_AUTO_TEST_CASE(morphReconCpuTest)
 {
+    std::cout << "###################### ";
+    std::cout << "RUNNING TESTS USING CPU" << std::endl;
     testRunner(CPU);
 }
 
 
 BOOST_AUTO_TEST_CASE(morphReconCpuMulticoreTest)
 {
+    std::cout << "###################### ";
+    std::cout << "RUNNING TESTS USING CPU MULTICORE" << std::endl;
     testRunner(CPU_MULTICORE);
 }
 
@@ -474,18 +482,18 @@ BOOST_AUTO_TEST_CASE(morphReconAllTest)
     std::cout << "###################### ";
     std::cout << "RUNNING TESTS USING OPENCL" << std::endl;
     testRunner(OPENCL);
-//    std::cout << "###################### ";
-//    std::cout << "RUNNING TESTS USING CUDA" << std::endl;
-//    testRunner(CUDA);
-//    std::cout << "###################### ";
-//    std::cout << "RUNNING TESTS USING CPU" << std::endl;
-//    testRunner(CPU);
-//    std::cout << "###################### ";
-//    std::cout << "RUNNING TESTS USING CPU MULTICORE" << std::endl;
-//    testRunner(CPU_MULTICORE);
+    std::cout << "###################### ";
+    std::cout << "RUNNING TESTS USING CUDA" << std::endl;
+    testRunner(CUDA);
+    std::cout << "###################### ";
+    std::cout << "RUNNING TESTS USING CPU" << std::endl;
+    testRunner(CPU);
+    std::cout << "###################### ";
+    std::cout << "RUNNING TESTS USING CPU MULTICORE" << std::endl;
+    testRunner(CPU_MULTICORE);
 
-//    std::cout << "###################### ";
-//    std::cout << "TESTS FINISHED" << std::endl;
+    std::cout << "###################### ";
+    std::cout << "TESTS FINISHED" << std::endl;
 }
 
 
