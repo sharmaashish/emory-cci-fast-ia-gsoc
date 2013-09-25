@@ -106,8 +106,8 @@ if(NS_FEATURES OR NS_SEGMENT)
                 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --use_fast_math -arch=sm_20 -O2 -DPREFIX_SUM)
          #	set(CUDA_NVCC_FLAGS_DEBUG ${CUDA_NVCC_FLAGS_DEBUG} -G)  # too slow...
            set(CUDA_NVCC_FLAGS_DEBUG ${CUDA_NVCC_FLAGS_DEBUG} -DTHRUST_DEBUG)
-            message(STATUS "CUDA NVCC target flags: ${CUDA_NVCC_FLAGS}")
-    	add_definitions( -DWITH_CUDA )
+           message(STATUS "CUDA NVCC target flags: ${CUDA_NVCC_FLAGS}")
+           add_definitions( -DWITH_CUDA )
         endif(CUDA_FOUND)
     else(USE_CUDA)
     	set(CUDA_FOUND 0)
@@ -130,6 +130,7 @@ if(NS_FEATURES OR NS_SEGMENT)
             endif(OPENCL_PROFILE)
 
             add_definitions(-D__CL_ENABLE_EXCEPTIONS)
+            add_definitions(-DWITH_OPENCL)
 
             # OpenCL C++ bindings
             include_directories(BEFORE ${PROJECT_SOURCE_DIR}/external)

@@ -6,7 +6,6 @@
 
 #include "TestUtils.h"
 #include "Logger.h"
-#include "opencl/utils/ocl_utils.h"
 
 #include <iostream>
 #include <stdio.h>
@@ -17,7 +16,11 @@
 
 #include "MorphologicOperations.h"
 
+#ifdef WITH_OPENCL
+#include "opencl/utils/ocl_utils.h"
 #include "opencl/morph_recon.h"
+#endif
+
 
 #define ITER_NUM 1
 
@@ -54,7 +57,7 @@ static const char* outputs[] = {
     "mr_out_oligoIII.1.ndpi-0000012288-0000028672_inv_eroded_3x_out.png"
 };
 
-
+#ifdef WITH_OPENCL
 uint64 morphReconOcl(const std::string& marker_file,
                     const std::string& mask_file,
                     const std::string& output_file, int iter_num)
@@ -135,7 +138,17 @@ uint64 morphReconOcl(const std::string& marker_file,
 
     return total_time;
 }
+#else
+uint64 morphReconOcl(const std::string& marker_file,
+                    const std::string& mask_file,
+                    const std::string& output_file, int iter_num)
+{
+    std::cout << "OpenCL not supported!" << std::endl;
+    return 0;
+}
+#endif // WITH_OPENCL
 
+#ifdef WITH_CUDA
 uint64 morphReconCuda(const std::string& marker_file,
                       const std::string& mask_file,
                       const std::string& output_file, int iter_num)
@@ -192,6 +205,15 @@ uint64 morphReconCuda(const std::string& marker_file,
 
     return total_time;
 }
+#else // WITH_CUDA
+uint64 morphReconCuda(const std::string& marker_file,
+                      const std::string& mask_file,
+                      const std::string& output_file, int iter_num)
+{
+    std::cout << "CUDA not supported!" << std::endl;
+    return 0;
+}
+#endif // WITH_CUDA
 
 uint64 morphReconCpu(const std::string& marker_file,
                      const std::string& mask_file,
@@ -452,9 +474,9 @@ BOOST_AUTO_TEST_CASE(morphReconAllTest)
     std::cout << "###################### ";
     std::cout << "RUNNING TESTS USING OPENCL" << std::endl;
     testRunner(OPENCL);
-//    std::cout << "###################### ";
-//    std::cout << "RUNNING TESTS USING CUDA" << std::endl;
-//    testRunner(CUDA);
+    std::cout << "###################### ";
+    std::cout << "RUNNING TESTS USING CUDA" << std::endl;
+    testRunner(CUDA);
     std::cout << "###################### ";
     std::cout << "RUNNING TESTS USING CPU" << std::endl;
     testRunner(CPU);
