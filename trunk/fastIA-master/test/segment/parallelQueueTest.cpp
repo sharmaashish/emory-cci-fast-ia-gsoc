@@ -76,8 +76,8 @@ void dequeueTest(cl::Buffer queue_data, cl::Buffer queue_metadata,
     dequeue_test_kernel.setArg(3, local_mem);
 
     cl::NDRange nullRange;
-    cl::NDRange global(512, 1);
-    cl::NDRange local(512, 1);
+    cl::NDRange global(QUEUE_NUM_THREADS, 1);
+    cl::NDRange local(QUEUE_NUM_THREADS, 1);
 
     cl_int status = queue.enqueueNDRangeKernel(dequeue_test_kernel,
                                                nullRange, global, local);

@@ -4,7 +4,6 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/execution_monitor.hpp>
 #include "TestUtils.h"
-#include "opencl/utils/ocl_utils.h"
 #include "Logger.h"
 
 #include <iostream>
