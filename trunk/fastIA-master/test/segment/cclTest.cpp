@@ -57,8 +57,8 @@ BOOST_AUTO_TEST_CASE(cclTest)
         cl::CommandQueue queue = ProgramCache::getDefaultCommandQueue();
         cl::Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
-        cl::Buffer d_image(context, CL_TRUE, sizeof(unsigned char) * size);
-        cl::Buffer d_output(context, CL_TRUE, sizeof(int) * size);
+        cl::Buffer d_image(context, CL_MEM_READ_ONLY, sizeof(unsigned char) * size);
+        cl::Buffer d_output(context, CL_MEM_READ_WRITE, sizeof(int) * size);
 
         queue.enqueueWriteBuffer(d_image, CL_TRUE, 0, sizeof(unsigned char)
                                                     * size, binary_image.data);
@@ -73,11 +73,57 @@ BOOST_AUTO_TEST_CASE(cclTest)
         ccl(d_image, d_output, width, height, -1, 4);
 
         t3 = cci::common::event::timestampInUS();
-        area_threshold(d_output, width, height, -1, 150, std::numeric_limits<int>::max());
+        area_threshold(d_output, width, height, -1, 150,
+                       std::numeric_limits<int>::max());
         queue.enqueueBarrier();
         t4 = cci::common::event::timestampInUS();
 
         int object_count = relabel(d_output, width, height, -1);
+
+        cl::Buffer x_min(context, CL_MEM_READ_WRITE, sizeof(int) * size);
+        cl::Buffer x_max(context, CL_MEM_READ_WRITE, sizeof(int) * size);
+        cl::Buffer y_min(context, CL_MEM_READ_WRITE, sizeof(int) * size);
+        cl::Buffer y_max(context, CL_MEM_READ_WRITE, sizeof(int) * size);
+
+        int bb_count = 0;
+
+
+        bounding_box(d_output, width, height, 0, bb_count,
+                     x_min, x_max, y_min, y_max);
+
+
+
+        int* x_min_host = new int[size];
+        int* x_max_host = new int[size];
+        int* y_min_host = new int[size];
+        int* y_max_host = new int[size];
+
+        queue.enqueueReadBuffer(x_min, CL_TRUE, 0,
+                                size * sizeof(int), x_min_host);
+        queue.enqueueReadBuffer(x_max, CL_TRUE, 0,
+                                size * sizeof(int), x_max_host);
+        queue.enqueueReadBuffer(y_min, CL_TRUE, 0,
+                                size * sizeof(int), y_min_host);
+        queue.enqueueReadBuffer(y_max, CL_TRUE, 0,
+                                size * sizeof(int), y_max_host);
+
+        for(int i = 0; i < 10; ++i)
+        {
+            std::cout << "x_min: " << x_min_host[i] << ", ";
+            std::cout << "x_max: " << x_max_host[i] << ", ";
+            std::cout << "y_min: " << y_min_host[i] << ", ";
+            std::cout << "y_max: " << y_max_host[i] << std::endl;
+        }
+
+        delete[] x_min_host;
+        delete[] x_max_host;
+        delete[] y_min_host;
+        delete[] y_max_host;
+
+        std::cout << "bounding box, count: " << bb_count << std::endl;
+
+
+
 
         t2 = cci::common::event::timestampInUS();
 
@@ -97,9 +143,14 @@ BOOST_AUTO_TEST_CASE(cclTest)
         queue.enqueueReadBuffer(d_output, CL_TRUE, 0,
                                  sizeof(int) * size, output.data);
 
-        cciutils::cv::normalizeLabels(output);
+        //cciutils::cv::normalizeLabels(output);
 
         cv::imwrite(DATA_OUT("ccl_output.png"), output);
+
+
+
+
+        //bounding_box();
 
 //        if(!output_file.empty() && i == 0)
 //            cv::imwrite(output_file, markerInt);
