@@ -6,7 +6,7 @@
 
 #define PACK_INDEX(X, Y) ((X << 16) | Y)
 
-#define DEBUG_PRINT
+//#define DEBUG_PRINT
 
 inline int propagate(__global MARKER_TYPE* marker, __global const MASK_TYPE* mask,
                      int x, int y, int ncols, MARKER_TYPE pval)

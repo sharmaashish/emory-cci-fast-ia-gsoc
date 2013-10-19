@@ -224,9 +224,9 @@ void area_threshold(cl::Buffer labels, int width, int height,
 
 void bounding_box(cl::Buffer labels, int width, int height,
                   int bgval, int& count,
-                  cl::Buffer out_labels,
-                  cl::Buffer x_min, cl::Buffer x_max,
-                  cl::Buffer y_min, cl::Buffer y_max,
+                  //cl::Buffer out_labels,
+                  cl::Buffer& x_min, cl::Buffer& x_max,
+                  cl::Buffer& y_min, cl::Buffer& y_max,
                   ProgramCache &cache, cl::CommandQueue &queue)
 {
 
@@ -302,19 +302,19 @@ void bounding_box(cl::Buffer labels, int width, int height,
     queue.enqueueNDRangeKernel(b_box_vertical_kernel, cl::NullRange,
                                global_t_1, local_t_1);
 
-    b_box_pack_kernel.setArg(0, labels);
-    b_box_pack_kernel.setArg(1, counter);
-    b_box_pack_kernel.setArg(2, x_min);
-    b_box_pack_kernel.setArg(3, x_max);
-    b_box_pack_kernel.setArg(4, y_min);
-    b_box_pack_kernel.setArg(5, y_max);
-    b_box_pack_kernel.setArg(6, width);
-    b_box_pack_kernel.setArg(7, height);
+//    b_box_pack_kernel.setArg(0, labels);
+//    b_box_pack_kernel.setArg(1, counter);
+//    b_box_pack_kernel.setArg(2, x_min);
+//    b_box_pack_kernel.setArg(3, x_max);
+//    b_box_pack_kernel.setArg(4, y_min);
+//    b_box_pack_kernel.setArg(5, y_max);
+//    b_box_pack_kernel.setArg(6, width);
+//    b_box_pack_kernel.setArg(7, height);
 
-    queue.enqueueNDRangeKernel(b_box_pack_kernel, cl::NullRange,
-                               global, local);
+//    queue.enqueueNDRangeKernel(b_box_pack_kernel, cl::NullRange,
+//                               global, local);
 
-    //queue.enqueueReadBuffer(counter, CL_TRUE, 0, sizeof(int), &object_counter);
+    queue.enqueueReadBuffer(counter, CL_TRUE, 0, sizeof(int), &count);
     //return object_counter - 1;
 
 }

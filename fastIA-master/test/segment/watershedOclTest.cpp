@@ -156,6 +156,7 @@ void test_image(const char* filename)
 
         watershed(width, height, srcBuff, dstBuff);
 
+#ifdef OPENCL_PROFILE
         float total_time = getLastExecutionTime();
 
         std::cout << "Execution time in milliseconds = " << std::fixed << std::setprecision(3)
@@ -165,6 +166,7 @@ void test_image(const char* filename)
                   << "(3): " << watershed_minima_kernel_time << std::endl
                   << "(4): " << watershed_plateau_kernel_time << std::endl
                   << "(5): " << watershed_flood_kernel_time << std::endl;
+#endif
 
 #ifdef DEBUG_PRINT
         std::cout << "reading output (labels)" << std::endl;

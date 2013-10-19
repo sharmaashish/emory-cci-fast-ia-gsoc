@@ -377,11 +377,11 @@ __kernel void b_box_init(__global int* x_min,
     {
         int global_index = x + y * w;
 
-        x_min[global_index] = 0;
-        y_min[global_index] = 0;
+        x_min[global_index] = INT_MAX;
+        y_min[global_index] = INT_MAX;
 
-        x_max[global_index] = (0xFFFFFFFF >> 1);
-        y_max[global_index] = (0xFFFFFFFF >> 1);
+        x_max[global_index] = 0;
+        y_max[global_index] = 0;
     }
 }
 
@@ -402,7 +402,7 @@ __kernel void b_box_horizontal(__global int* label,
         int pos_min = 0;
         int pos_max = 0;
 
-       // int counter = 1;
+        int counter = 1;
 
         for(int i = 1; i < w; ++i)
         {
@@ -419,12 +419,15 @@ __kernel void b_box_horizontal(__global int* label,
                 if(prev_target != bgval)
                 {
                     //atomic_add(&area_counters[prev_target], counter);
-                    atomic_min(&x_min[prev_target], pos_min);
-                    atomic_max(&x_max[prev_target], pos_max);
+                    atomic_min(&x_min[prev_target-1], pos_min);
+                    atomic_max(&x_max[prev_target-1], pos_max);
                 }
                 //counter = 1;
-                x_min = i;
-                x_max = i;
+             //   x_min = i;  ????
+               // x_max = i;
+                pos_min = i;
+                pos_max = i;
+
                 prev_target = target;
             }
         }
@@ -473,20 +476,23 @@ __kernel void b_box_vertical(__global int* label,
                 if(prev_target != bgval)
                 {
                     //atomic_add(&area_counters[prev_target], counter);
-                    atomic_min(&y_min[prev_target], pos_min);
-                    atomic_max(&y_max[prev_target], pos_max);
+                    atomic_min(&y_min[prev_target-1], pos_min);
+                    atomic_max(&y_max[prev_target-1], pos_max);
                 }
                 //counter = 1;
-                y_min = i;
-                y_max = i;
+//                y_min = i;
+//                y_max = i;
+                pos_min = i;
+                pos_max = i;
+
                 prev_target = target;
             }
         }
 
         if(prev_target != bgval)
         {
-            atomic_min(&y_min[prev_target], pos_min);
-            atomic_max(&y_max[prev_target], pos_max);
+            atomic_min(&y_min[prev_target-1], pos_min);
+            atomic_max(&y_max[prev_target-1], pos_max);
         }
     }
 }

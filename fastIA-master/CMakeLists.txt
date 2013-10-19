@@ -124,9 +124,12 @@ if(NS_FEATURES OR NS_SEGMENT)
 	    message(STATUS "opencl include dir: " ${OPENCL_INCLUDE_DIR})
 
             set(OPENCL_PROFILE ON CACHE BOOL "Compile with profiling support for OpenCL")
-                add_definitions(-DOPENCL_PROFILE)
-            if(OPENCL_PROFILE)
 
+            if(OPENCL_PROFILE)
+                message(STATUS "OpenCL profiling enabled")
+                add_definitions(-DOPENCL_PROFILE)
+            else(OPENCL_PROFILE)
+                message(STATUS "OpenCL profiling disabled")
             endif(OPENCL_PROFILE)
 
             add_definitions(-D__CL_ENABLE_EXCEPTIONS)
